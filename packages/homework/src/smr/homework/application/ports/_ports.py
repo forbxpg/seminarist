@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Protocol
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Sequence
+    from datetime import datetime
 
     from smr.homework.domain import Assignment, Submission, SubmissionFile
 
@@ -43,6 +44,19 @@ class AssignmentRepository(Protocol):
 
         Returns:
             Sequence[Assignment] - Its assignments.
+
+        """
+        ...
+
+    async def due_between(self, start: datetime, end: datetime) -> Sequence[Assignment]:
+        """List the assignments with a deadline in a window.
+
+        Args:
+            start: datetime - From, exclusive.
+            end: datetime - To, inclusive.
+
+        Returns:
+            Sequence[Assignment] - Those assignments.
 
         """
         ...

@@ -62,7 +62,21 @@
         "packages/core/tests/support",
         "packages/roster/tests/support",
         "packages/gradebook/tests/support",
-        "packages/homework/tests/support"
+        "packages/homework/tests/support",
+        "packages/notifications/tests/support"
+      ],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
+    {
+      "root": "packages/notifications/tests",
+      "extraPaths": [
+        "packages/core/tests/support",
+        "packages/roster/tests/support",
+        "packages/notifications/tests/support"
       ],
       "reportAny": false,
       "reportPrivateUsage": false,

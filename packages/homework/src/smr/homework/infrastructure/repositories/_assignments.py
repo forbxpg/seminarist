@@ -13,6 +13,7 @@ from smr.homework.infrastructure.models import AssignmentModel
 if TYPE_CHECKING:
     import uuid
     from collections.abc import Sequence
+    from datetime import datetime
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -78,6 +79,22 @@ class SqlAlchemyAssignments:
             select(_Row)
             .where(_Row.group_id == group_id)
             .order_by(_Row.deadline.desc()),
+        )
+        return [_domain(row) for row in rows]
+
+    async def due_between(self, start: datetime, end: datetime) -> Sequence[Assignment]:
+        """List the assignments with a deadline in a window.
+
+        Args:
+            start: datetime - From, exclusive.
+            end: datetime - To, inclusive.
+
+        Returns:
+            Sequence[Assignment] - Those assignments.
+
+        """
+        rows = await self._session.scalars(
+            select(_Row).where(_Row.deadline > start, _Row.deadline <= end),
         )
         return [_domain(row) for row in rows]
 

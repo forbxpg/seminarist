@@ -17,6 +17,7 @@ from smr.homework.domain import (
     Submission,
     SubmissionStatus,
 )
+from smr.notifications.domain import NotificationKind
 
 from ._common import assignment_of, open_group
 from ._upload import Upload
@@ -36,6 +37,7 @@ if TYPE_CHECKING:
         FileRepository,
         SubmissionRepository,
     )
+    from smr.notifications.application.contracts import NotificationsApi
     from smr.roster.application.contracts import RosterApi
     from smr.roster.domain import Student
 
@@ -99,13 +101,14 @@ def _clean(draft: AssignmentDraft) -> AssignmentDraft:
 
 @final
 class CreateAssignment:
-    """A new assignment, issued in the ledger with its deadline."""
+    """A new assignment, issued in the ledger with its deadline; the group is told."""
 
     def __init__(
         self,
         assignments: AssignmentRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
+        notifications: NotificationsApi,
         files: FileStore,
         uow: UnitOfWork,
         audit: AuditLog,
@@ -115,6 +118,7 @@ class CreateAssignment:
         self._assignments: AssignmentRepository = assignments
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
+        self._notifications: NotificationsApi = notifications
         self._files: FileStore = files
         self._uow: UnitOfWork = uow
         self._audit: AuditLog = audit
@@ -150,7 +154,7 @@ class CreateAssignment:
         self._guard.require(actor)
         clean = _clean(draft)
         async with self._uow:
-            _ = await open_group(self._roster, group_id)
+            group = await open_group(self._roster, group_id)
             work_type = (
                 await self._gradebook.work_type_of_kind(group_id, WorkTypeKind.HOMEWORK)
                 if work_type_id is None
@@ -190,6 +194,16 @@ class CreateAssignment:
             await self._assignments.add(assignment)
             await self._audit.record(
                 _audit(actor, "assignment.created", assignment.assignment_id),
+            )
+            _ = await self._notifications.notify_group(
+                group_id,
+                NotificationKind.ASSIGNMENT_PUBLISHED,
+                {
+                    "title": assignment.title,
+                    "deadline": assignment.deadline.isoformat(),
+                    "group": group.title,
+                },
+                dedupe_key=f"assignment:{assignment.assignment_id}",
             )
             await self._uow.commit()
         return assignment

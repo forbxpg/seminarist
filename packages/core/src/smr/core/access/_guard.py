@@ -19,6 +19,16 @@ class AdminGuard:
     def __init__(self, admin_ids: Collection[int]) -> None:
         self._admin_ids: frozenset[int] = frozenset(admin_ids)
 
+    @property
+    def admin_ids(self) -> frozenset[int]:
+        """Tell the teachers' ids.
+
+        Returns:
+            frozenset[int] - Their Telegram user ids.
+
+        """
+        return self._admin_ids
+
     def is_admin(self, tg_user_id: int) -> bool:
         """Tell whether an account is a teacher's.
 

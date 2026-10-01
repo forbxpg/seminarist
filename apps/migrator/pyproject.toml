@@ -9,6 +9,7 @@ dependencies = [
     "smr-core",
     "smr-gradebook",
     "smr-homework",
+    "smr-notifications",
     "smr-roster",
     "smr-sessions",
     "sqlalchemy[asyncio]>=2.1.1,<3.0.0",
@@ -32,3 +33,4 @@ smr-roster = { workspace = true }
 smr-gradebook = { workspace = true }
 smr-sessions = { workspace = true }
 smr-homework = { workspace = true }
+smr-notifications = { workspace = true }

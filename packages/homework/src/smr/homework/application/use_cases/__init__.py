@@ -13,6 +13,7 @@ from ._assignments import (
     UpdateAssignment,
 )
 from ._files import DeleteGroupFiles, DeleteStudentFiles, ExportSubmissions
+from ._reminders import QueueReminders
 from ._review import GradeSubmission, OpenSubmission, Review, ReviewQueue
 from ._student import (
     AddFile,
@@ -40,6 +41,7 @@ __all__ = (
     "ListAssignments",
     "MyWork",
     "OpenSubmission",
+    "QueueReminders",
     "Review",
     "ReviewQueue",
     "StudentAssignments",

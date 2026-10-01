@@ -22,7 +22,8 @@ ignore = [
 
 [lint.pylint]
 # Use cases take their repositories, unit of work, audit log and guard by injection.
-max-args = 8
+max-args = 10
+max-positional-args = 10
 
 [lint.pydocstyle]
 convention = "google"

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Homework: assignments, drafts of photos and PDFs, versions, grading."
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["smr-core", "smr-gradebook", "smr-roster"]
+dependencies = ["smr-core", "smr-gradebook", "smr-notifications", "smr-roster"]
 # Internal to the workspace: PyPI refuses an upload with this classifier.
 classifiers = ["Private :: Do Not Upload"]
 
@@ -18,4 +18,5 @@ module-name = "smr.homework"
 [tool.uv.sources]
 smr-core = { workspace = true }
 smr-gradebook = { workspace = true }
+smr-notifications = { workspace = true }
 smr-roster = { workspace = true }

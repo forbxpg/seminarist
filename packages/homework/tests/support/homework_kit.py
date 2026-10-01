@@ -23,6 +23,7 @@ from smr.homework.application.use_cases import (
     ListAssignments,
     MyWork,
     OpenSubmission,
+    QueueReminders,
     ReviewQueue,
     StudentAssignments,
     Submit,
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from gradebook_kit import Gradebook
+    from notifications_kit import Notifications
     from sqlalchemy.ext.asyncio import AsyncSession
 
 __all__ = ("MAX_FILES", "Homework", "homework")
@@ -53,6 +55,7 @@ class Homework:
         self,
         session: AsyncSession,
         gradebook: Gradebook,
+        notifications: Notifications,
         data_dir: Path,
     ) -> None:
         assignments = SqlAlchemyAssignments(session)
@@ -63,15 +66,19 @@ class Homework:
         guard = AdminGuard({1})
         roster = gradebook.roster
         ledger = gradebook.ledger
+        notifier = notifications.notifier
         clock = roster.clock
+        files = FileStore(data_dir, max_bytes=1024)
         self.data_dir: Path = data_dir
-        self.files: FileStore = FileStore(data_dir, max_bytes=1024)
+        self.files: FileStore = files
         self.gradebook: Gradebook = gradebook
+        self.notifications: Notifications = notifications
         self.create: CreateAssignment = CreateAssignment(
             assignments,
             roster.api,
             ledger,
-            self.files,
+            notifier,
+            files,
             uow,
             audit,
             guard,
@@ -87,7 +94,7 @@ class Homework:
         )
         self.copy: CopyAssignment = CopyAssignment(
             assignments,
-            self.files,
+            files,
             self.create,
             guard,
         )
@@ -95,7 +102,7 @@ class Homework:
             assignments,
             stored,
             ledger,
-            self.files,
+            files,
             uow,
             audit,
             guard,
@@ -119,7 +126,7 @@ class Homework:
             submissions,
             stored,
             roster.api,
-            self.files,
+            files,
             uow,
             MAX_FILES,
         )
@@ -128,7 +135,7 @@ class Homework:
             submissions,
             stored,
             roster.api,
-            self.files,
+            files,
             uow,
         )
         self.submit: Submit = Submit(
@@ -136,7 +143,7 @@ class Homework:
             submissions,
             stored,
             roster.api,
-            self.files,
+            files,
             uow,
             audit,
             clock,
@@ -155,20 +162,25 @@ class Homework:
             submissions,
             roster.api,
             ledger,
+            notifier,
             uow,
             guard,
         )
-        self.forget_files: DeleteStudentFiles = DeleteStudentFiles(
-            stored,
-            self.files,
+        self.reminders: QueueReminders = QueueReminders(
+            assignments,
+            submissions,
+            roster.api,
+            notifier,
             uow,
+            clock,
         )
+        self.forget_files: DeleteStudentFiles = DeleteStudentFiles(stored, files, uow)
         self.export: ExportSubmissions = ExportSubmissions(
             assignments,
             submissions,
             stored,
             roster.api,
-            self.files,
+            files,
             guard,
             clock,
             data_dir,
@@ -176,6 +188,11 @@ class Homework:
 
 
 @pytest.fixture
-def homework(session: AsyncSession, gradebook: Gradebook, tmp_path: Path) -> Homework:
+def homework(
+    session: AsyncSession,
+    gradebook: Gradebook,
+    notifications: Notifications,
+    tmp_path: Path,
+) -> Homework:
     """Give homework's use cases over the test's session and a temporary disk."""
-    return Homework(session, gradebook, tmp_path)
+    return Homework(session, gradebook, notifications, tmp_path)

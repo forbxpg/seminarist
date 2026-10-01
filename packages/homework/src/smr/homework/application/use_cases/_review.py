@@ -11,6 +11,7 @@ from smr.homework.domain import (
     SubmissionNotFoundError,
     SubmissionStatus,
 )
+from smr.notifications.domain import NotificationKind
 from smr.roster.domain import StudentNotFoundError
 
 from ._common import assignment_of
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
         SubmissionRepository,
     )
     from smr.homework.domain import Assignment, SubmissionFile
+    from smr.notifications.application.contracts import NotificationsApi
     from smr.roster.application.contracts import RosterApi
     from smr.roster.domain import Student
 
@@ -136,6 +138,7 @@ class GradeSubmission:
         submissions: SubmissionRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
+        notifications: NotificationsApi,
         uow: UnitOfWork,
         guard: AdminGuard,
     ) -> None:
@@ -143,6 +146,7 @@ class GradeSubmission:
         self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
+        self._notifications: NotificationsApi = notifications
         self._uow: UnitOfWork = uow
         self._guard: AdminGuard = guard
 
@@ -196,5 +200,15 @@ class GradeSubmission:
                 entry_id=entry.entry_id,
             )
             await self._submissions.update(graded)
+            _ = await self._notifications.notify_student(
+                submission.student_id,
+                NotificationKind.HOMEWORK_GRADED,
+                {
+                    "title": assignment.title,
+                    "points": str(entry.points.normalize()),
+                    "max_points": str(assignment.max_points.normalize()),
+                    "comment": entry.comment,
+                },
+            )
             await self._uow.commit()
         return graded, student
