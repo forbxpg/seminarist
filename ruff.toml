@@ -20,6 +20,10 @@ ignore = [
     "ambiguous-unicode-character-comment",
 ]
 
+[lint.pylint]
+# Use cases take their repositories, unit of work, audit log and guard by injection.
+max-args = 8
+
 [lint.pydocstyle]
 convention = "google"
 
@@ -46,7 +50,7 @@ runtime-evaluated-decorators = [
 "**/di.py" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
 "**/di/**" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
 # Alembic loads revisions by path: their folders are not packages.
-"**/migrations/versions/*" = ["implicit-namespace-package"]
+"**/migrations/versions/*" = ["implicit-namespace-package", "line-too-long"]
 "apps/migrator/src/smr/migrator/env.py" = ["implicit-namespace-package"]
 # The backup task runs pg_dump, a program it trusts, with arguments it builds itself.
 "apps/worker/src/smr/worker/backup/**" = [

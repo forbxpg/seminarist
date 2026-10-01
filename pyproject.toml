@@ -16,7 +16,7 @@ members = ["packages/*", "apps/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["packages", "apps"]
-pythonpath = ["packages/core/tests/support"]
+pythonpath = ["packages/core/tests/support", "packages/roster/tests/support"]
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -47,12 +47,25 @@ dev = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "The kernel knows no domain and no app"
+name = "Packages know neither Telegram, nor the task queue, nor the apps"
 type = "forbidden"
-source_modules = ["smr.core"]
+source_modules = ["smr.core", "smr.roster"]
 forbidden_modules = [
     "smr.migrator",
     "aiogram",
     "aiogram_dialog",
     "taskiq",
 ]
+
+[[tool.importlinter.contracts]]
+name = "The kernel knows no domain"
+type = "forbidden"
+source_modules = ["smr.core"]
+forbidden_modules = ["smr.roster"]
+
+[[tool.importlinter.contracts]]
+name = "Domain rules know no storage"
+type = "forbidden"
+source_modules = ["smr.roster.domain"]
+forbidden_modules = ["sqlalchemy", "smr.roster.infrastructure", "smr.roster.application"]
+

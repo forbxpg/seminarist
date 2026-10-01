@@ -8,6 +8,7 @@ from typing import final
 from dishka import Provider, Scope, ValidationSettings, provide
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from smr.core.access import AdminGuard
 from smr.core.audit import AuditLog, SqlAlchemyAuditLog
 from smr.core.clock import Clock, SystemClock
 from smr.core.config import (
@@ -158,6 +159,19 @@ class CoreProvider(Provider):
 
         """
         return FileStore(settings.data_dir, settings.max_file_bytes)
+
+    @provide(scope=Scope.APP)
+    def admin_guard(self, settings: TelegramSettings) -> AdminGuard:
+        """Give the teachers' guard.
+
+        Args:
+            settings: TelegramSettings - Who the teachers are.
+
+        Returns:
+            AdminGuard - The guard.
+
+        """
+        return AdminGuard(settings.admin_ids)
 
     @provide(scope=Scope.APP)
     def clock(self) -> Clock:

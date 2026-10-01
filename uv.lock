@@ -7,6 +7,7 @@ members = [
     "seminarist",
     "smr-core",
     "smr-migrator",
+    "smr-roster",
 ]
 
 [[package]]
@@ -901,6 +902,7 @@ source = { editable = "apps/migrator" }
 dependencies = [
     { name = "alembic" },
     { name = "smr-core" },
+    { name = "smr-roster" },
     { name = "sqlalchemy", extra = ["asyncio"] },
 ]
 
@@ -908,8 +910,20 @@ dependencies = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.20.0,<2.0.0" },
     { name = "smr-core", editable = "packages/core" },
+    { name = "smr-roster", editable = "packages/roster" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.1,<3.0.0" },
 ]
+
+[[package]]
+name = "smr-roster"
+version = "0.1.0"
+source = { editable = "packages/roster" }
+dependencies = [
+    { name = "smr-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "smr-core", editable = "packages/core" }]
 
 [[package]]
 name = "sqlalchemy"
