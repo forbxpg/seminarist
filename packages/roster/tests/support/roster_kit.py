@@ -24,6 +24,7 @@ from smr.roster.application.use_cases import (
     PendingBindings,
     PurgeGroup,
     RejectBinding,
+    RemoveStudent,
     RotateInvite,
     Unbind,
     UpdateGroupSettings,
@@ -70,6 +71,7 @@ class Roster:
         self.unbind = Unbind(students, uow, audit, guard)
         self.memberships = Memberships(groups, students)
         self.forget = ForgetAccount(students, uow, audit)
+        self.remove = RemoveStudent(students, uow, audit, guard)
 
 
 @pytest.fixture

@@ -1,0 +1,20 @@
+[project]
+name = "smr-gradebook"
+version = "0.1.0"
+description = "One ledger of points: totals, rank, distribution and board priority."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["smr-core", "smr-roster"]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.gradebook"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-roster = { workspace = true }

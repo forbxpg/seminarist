@@ -16,7 +16,11 @@ members = ["packages/*", "apps/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["packages", "apps"]
-pythonpath = ["packages/core/tests/support", "packages/roster/tests/support"]
+pythonpath = [
+    "packages/core/tests/support",
+    "packages/roster/tests/support",
+    "packages/gradebook/tests/support",
+]
 addopts = [
     "--strict-markers",
     "--strict-config",
@@ -49,7 +53,7 @@ dev = [
 [[tool.importlinter.contracts]]
 name = "Packages know neither Telegram, nor the task queue, nor the apps"
 type = "forbidden"
-source_modules = ["smr.core", "smr.roster"]
+source_modules = ["smr.core", "smr.roster", "smr.gradebook"]
 forbidden_modules = [
     "smr.migrator",
     "aiogram",
@@ -61,11 +65,17 @@ forbidden_modules = [
 name = "The kernel knows no domain"
 type = "forbidden"
 source_modules = ["smr.core"]
-forbidden_modules = ["smr.roster"]
+forbidden_modules = ["smr.roster", "smr.gradebook"]
+
+[[tool.importlinter.contracts]]
+name = "The roster depends on no feature"
+type = "forbidden"
+source_modules = ["smr.roster"]
+forbidden_modules = ["smr.gradebook"]
 
 [[tool.importlinter.contracts]]
 name = "Domain rules know no storage"
 type = "forbidden"
-source_modules = ["smr.roster.domain"]
-forbidden_modules = ["sqlalchemy", "smr.roster.infrastructure", "smr.roster.application"]
+source_modules = ["smr.roster.domain", "smr.gradebook.domain", "smr.gradebook.scoring"]
+forbidden_modules = ["sqlalchemy"]
 

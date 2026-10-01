@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from smr.core.audit import AUDIT_METADATA
+from smr.gradebook.infrastructure.models import METADATA as GRADEBOOK_METADATA
 from smr.roster.infrastructure.models import METADATA as ROSTER_METADATA
 
 if TYPE_CHECKING:
@@ -18,4 +19,4 @@ def all_metadata() -> list[MetaData]:
         list[MetaData] - One per package schema.
 
     """
-    return [AUDIT_METADATA, ROSTER_METADATA]
+    return [AUDIT_METADATA, ROSTER_METADATA, GRADEBOOK_METADATA]
