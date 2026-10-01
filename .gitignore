@@ -1,0 +1,40 @@
+# --- Student data: never leaves this machine -------------------------------
+# Specs, plans, notes, council output.
+private/
+docs/
+# Runtime data: database, homework uploads, seminar PDFs, exports, backups.
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+*.csv
+*.xlsx
+*.dump
+*.bak
+# Secrets.
+.env
+.env.*
+!.env.example
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[codz]
+*.egg-info/
+build/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- Editors / OS ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.log

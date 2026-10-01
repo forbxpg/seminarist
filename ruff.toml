@@ -1,0 +1,74 @@
+# Lint and format. Types are checked by basedpyright (pyrightconfig.json), not by ruff.
+target-version = "py313"
+line-length = 88
+src = ["packages/*/src", "packages/*/tests", "apps/*/src", "apps/*/tests"]
+
+[lint]
+select = ["ALL"]
+preview = true
+future-annotations = true
+ignore = [
+    "single-line-implicit-string-concatenation",
+    "incorrect-blank-line-before-class",
+    "multi-line-summary-second-line",
+    "undocumented-public-init",
+    "undocumented-public-package",
+    "missing-copyright-notice",
+    "unused-async",
+    "ambiguous-unicode-character-string",
+    "ambiguous-unicode-character-docstring",
+    "ambiguous-unicode-character-comment",
+]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.isort]
+required-imports = ["from __future__ import annotations"]
+known-first-party = ["smr"]
+
+[lint.flake8-type-checking]
+# pydantic and dishka read annotations at runtime: their imports must stay importable.
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "pydantic_settings.BaseSettings",
+]
+runtime-evaluated-decorators = [
+    "dishka.provide",
+    "dishka.integrations.aiogram.inject",
+    "dishka.integrations.aiogram_dialog.inject",
+    "dishka.integrations.taskiq.inject",
+]
+
+[lint.per-file-ignores]
+# dishka providers are methods by design, even when they do not use `self`, and
+# dishka always finalizes a generator provider, so a yield inside `async with` is safe.
+"**/di.py" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
+"**/di/**" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
+# Alembic loads revisions by path: their folders are not packages.
+"**/migrations/versions/*" = ["implicit-namespace-package"]
+"apps/migrator/src/smr/migrator/env.py" = ["implicit-namespace-package"]
+# The backup task runs pg_dump, a program it trusts, with arguments it builds itself.
+"apps/worker/src/smr/worker/backup/**" = [
+    "subprocess-without-shell-equals-true",
+    "suspicious-subprocess-import",
+]
+# Tests need a one-line docstring, not Args/Returns sections.
+"**/tests/**" = [
+    "ANN",
+    "implicit-namespace-package",
+    "DOC",
+    "assert",
+    "hardcoded-password-default",
+    "hardcoded-password-func-arg",
+    "hardcoded-password-string",
+    "import-private-name",
+    "line-too-long",
+    "magic-value-comparison",
+    "no-self-use",
+    "private-member-access",
+]
+
+[format]
+preview = true
+docstring-code-format = true

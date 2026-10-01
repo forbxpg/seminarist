@@ -1,0 +1,26 @@
+{
+  "include": ["packages", "apps"],
+  "exclude": ["**/.venv", "**/__pycache__", "**/.ruff_cache"],
+  "pythonVersion": "3.13",
+  "venvPath": ".",
+  "venv": ".venv",
+  "typeCheckingMode": "recommended",
+  "reportMissingTypeStubs": false,
+  "reportUnnecessaryTypeIgnoreComment": "warning",
+  // Fires on `from dishka import provide`: dishka types ProvideSource with a bare
+  // classmethod. Unknown values are still caught where used.
+  "reportUnknownVariableType": "none",
+  "executionEnvironments": [
+    {
+      "root": "packages/core/tests",
+      "extraPaths": ["packages/core/tests/support"],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
+    { "root": "packages" },
+    { "root": "apps" }
+  ]
+}
