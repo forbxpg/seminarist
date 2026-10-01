@@ -107,6 +107,24 @@
       "reportUnusedCallResult": false,
       "reportUnannotatedClassAttribute": false
     },
+    {
+      // aiogram-dialog keeps dialog_data and getter kwargs untyped; the widgets'
+      // texts are long Russian lines that ruff wants implicitly concatenated.
+      "root": "apps/bot/src",
+      "reportAny": false,
+      "reportExplicitAny": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportImplicitStringConcatenation": false
+    },
+    {
+      "root": "apps/bot/tests",
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
     { "root": "packages" },
     { "root": "apps" }
   ]

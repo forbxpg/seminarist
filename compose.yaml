@@ -49,6 +49,16 @@ services:
     restart: "no"
     command: ["smr-migrator", "upgrade"]
 
+  # Exactly one bot: Telegram refuses two pollers on the same token.
+  bot:
+    <<: *app
+    command: ["smr-bot"]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
   worker:
     <<: *app
     command: ["taskiq", "worker", "smr.worker.broker:broker"]

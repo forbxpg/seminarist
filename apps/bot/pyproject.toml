@@ -1,0 +1,41 @@
+[project]
+name = "smr-bot"
+version = "0.1.0"
+description = "The Telegram bot: the students' and the teachers' interface."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiogram>=3.31.0,<4.0.0",
+    "aiogram-dialog>=2.6.0,<3.0.0",
+    "dishka>=1.10.1,<2.0.0",
+    "openpyxl>=3.1.5,<4.0.0",
+    "redis>=8.1.0,<9.0.0",
+    "smr-core",
+    "smr-gradebook",
+    "smr-homework",
+    "smr-materials",
+    "smr-notifications",
+    "smr-roster",
+    "smr-sessions",
+]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[project.scripts]
+smr-bot = "smr.bot:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.bot"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-roster = { workspace = true }
+smr-gradebook = { workspace = true }
+smr-sessions = { workspace = true }
+smr-homework = { workspace = true }
+smr-materials = { workspace = true }
+smr-notifications = { workspace = true }

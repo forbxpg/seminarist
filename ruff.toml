@@ -67,6 +67,17 @@ runtime-evaluated-decorators = [
     "typing-only-standard-library-import",
     "typing-only-third-party-import",
 ]
+# dishka's aiogram integrations read handler and getter annotations at runtime.
+"apps/bot/src/smr/bot/dialogs/**" = [
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+]
+"apps/bot/src/smr/bot/handlers/**" = [
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+]
 # Alembic loads revisions by path: their folders are not packages.
 "**/migrations/versions/*" = ["implicit-namespace-package", "line-too-long"]
 "apps/migrator/src/smr/migrator/env.py" = ["implicit-namespace-package"]
