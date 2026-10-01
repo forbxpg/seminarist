@@ -2,20 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
-from smr.materials.domain import MaterialNotFoundError, MaterialStatus
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from smr.materials.application.ports import (
-        MaterialFileRepository,
-        MaterialRepository,
-    )
-    from smr.materials.domain import Material, MaterialFile
-    from smr.roster.application.contracts import RosterApi
+from smr.materials.application.ports import (
+    MaterialFileRepository,
+    MaterialRepository,
+)
+from smr.materials.domain import (
+    Material,
+    MaterialFile,
+    MaterialNotFoundError,
+    MaterialStatus,
+)
+from smr.roster.application.contracts import RosterApi
 
 
 @final

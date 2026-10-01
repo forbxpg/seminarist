@@ -49,6 +49,25 @@ services:
     restart: "no"
     command: ["smr-migrator", "upgrade"]
 
+  worker:
+    <<: *app
+    command: ["taskiq", "worker", "smr.worker.broker:broker"]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  # Exactly one scheduler: two would queue every scheduled task twice.
+  scheduler:
+    <<: *app
+    command: ["taskiq", "scheduler", "smr.worker.broker:scheduler"]
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:
   redisdata:

@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from datetime import datetime
+from typing import final
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.core.files import FileKind
 from smr.materials.domain import Material, MaterialFile, MaterialStatus
 from smr.materials.infrastructure.models import MaterialFileModel, MaterialModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from datetime import datetime
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @final

@@ -6,10 +6,22 @@ import dataclasses
 import random
 import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from decimal import Decimal
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.contracts import GradebookApi
 from smr.gradebook.domain import WorkTypeKind
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Student
+from smr.sessions.application.ports import (
+    AttendanceRepository,
+    BoardCallRepository,
+    SessionRepository,
+)
 from smr.sessions.domain import (
     AttendanceStatus,
     BoardCall,
@@ -21,22 +33,6 @@ from smr.sessions.domain import (
 )
 
 from ._common import existing, open_group
-
-if TYPE_CHECKING:
-    from decimal import Decimal
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Student
-    from smr.sessions.application.ports import (
-        AttendanceRepository,
-        BoardCallRepository,
-        SessionRepository,
-    )
 
 _SYSTEM_RANDOM = random.SystemRandom()
 

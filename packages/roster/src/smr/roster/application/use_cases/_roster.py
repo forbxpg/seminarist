@@ -2,13 +2,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.core.audit import AuditLog
+from smr.core.database import UnitOfWork
+from smr.roster.application.ports import GroupRepository, StudentRepository
 from smr.roster.domain import (
     MAX_NAME_LENGTH,
     DuplicateNameError,
     GroupArchivedError,
     GroupNotFoundError,
+    Student,
     StudentNotFoundError,
     normalize_name,
     parse_roster,
@@ -16,16 +23,6 @@ from smr.roster.domain import (
 
 from ._audit import by_admin
 from ._results import ImportResult
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.database import UnitOfWork
-    from smr.roster.application.ports import GroupRepository, StudentRepository
-    from smr.roster.domain import Student
 
 
 @final

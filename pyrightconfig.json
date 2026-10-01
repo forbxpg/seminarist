@@ -98,6 +98,15 @@
       "reportUnknownArgumentType": false,
       "reportUnusedCallResult": false
     },
+    {
+      "root": "apps/worker/tests",
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false,
+      "reportUnannotatedClassAttribute": false
+    },
     { "root": "packages" },
     { "root": "apps" }
   ]

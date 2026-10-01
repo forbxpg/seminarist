@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from datetime import datetime
+from typing import final
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.core.files import FileKind
 from smr.homework.domain import Assignment, StatementFile
 from smr.homework.infrastructure.models import AssignmentModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from datetime import datetime
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 _Row = AssignmentModel
 

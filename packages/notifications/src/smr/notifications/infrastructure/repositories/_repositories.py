@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast, final
+import uuid
+from collections.abc import Collection, Mapping, Sequence
+from datetime import datetime
+from typing import cast, final
 
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import CursorResult, delete, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.notifications.domain import Notice, NotificationKind
 from smr.notifications.infrastructure.models import (
@@ -13,14 +17,6 @@ from smr.notifications.infrastructure.models import (
     OutboxModel,
     PreferenceModel,
 )
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Collection, Mapping, Sequence
-    from datetime import datetime
-
-    from sqlalchemy import CursorResult
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @final

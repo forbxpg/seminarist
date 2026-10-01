@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.database import UnitOfWork
+from smr.notifications.application.ports import Preferences
+from smr.roster.application.use_cases import Memberships
 from smr.roster.domain import BindingStatus
-
-if TYPE_CHECKING:
-    from smr.core.database import UnitOfWork
-    from smr.notifications.application.ports import Preferences
-    from smr.roster.application.use_cases import Memberships
 
 
 @final

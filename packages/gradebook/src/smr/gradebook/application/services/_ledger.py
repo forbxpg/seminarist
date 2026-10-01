@@ -4,10 +4,18 @@ from __future__ import annotations
 
 import dataclasses
 import uuid
+from collections.abc import Collection, Mapping
+from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, final
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.gradebook.application.ports import (
+    EntryRepository,
+    ItemRepository,
+    WorkTypeRepository,
+)
 from smr.gradebook.domain import (
     EntryNotFoundError,
     GradeEntry,
@@ -24,19 +32,7 @@ from smr.gradebook.scoring import (
     priority_weights,
     score_student,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Collection, Mapping
-    from datetime import datetime
-
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.gradebook.application.ports import (
-        EntryRepository,
-        ItemRepository,
-        WorkTypeRepository,
-    )
-    from smr.roster.application.contracts import RosterApi
+from smr.roster.application.contracts import RosterApi
 
 _ZERO = Decimal(0)
 

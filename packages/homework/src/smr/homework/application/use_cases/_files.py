@@ -3,29 +3,25 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 import zipfile
-from typing import TYPE_CHECKING, final
+from collections.abc import Sequence
+from pathlib import Path
+from typing import final
 
-from smr.core.clock import MOSCOW
+from smr.core.access import AdminGuard
+from smr.core.clock import MOSCOW, Clock
+from smr.core.database import UnitOfWork
+from smr.core.files import FileStore
+from smr.homework.application.ports import (
+    AssignmentRepository,
+    FileRepository,
+    SubmissionRepository,
+)
 from smr.homework.domain import folder_name
+from smr.roster.application.contracts import RosterApi
 
 from ._common import assignment_of
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from pathlib import Path
-
-    from smr.core.access import AdminGuard
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.core.files import FileStore
-    from smr.homework.application.ports import (
-        AssignmentRepository,
-        FileRepository,
-        SubmissionRepository,
-    )
-    from smr.roster.application.contracts import RosterApi
 
 _EXPORTS = "exports"
 

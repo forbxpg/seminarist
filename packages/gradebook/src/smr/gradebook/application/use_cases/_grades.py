@@ -2,23 +2,19 @@
 
 from __future__ import annotations
 
+import uuid
+from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, final
+from typing import final
 
-from smr.gradebook.domain import ItemNotFoundError
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Mapping, Sequence
-
-    from smr.core.access import AdminGuard
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.ports import EntryRepository, ItemRepository
-    from smr.gradebook.application.services import Ledger
-    from smr.gradebook.domain import GradeEntry
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Student
+from smr.core.access import AdminGuard
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.ports import EntryRepository, ItemRepository
+from smr.gradebook.application.services import Ledger
+from smr.gradebook.domain import GradeEntry, ItemNotFoundError
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Student
 
 
 class _Excused(Enum):

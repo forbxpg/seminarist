@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import dataclasses
 import uuid
-from typing import TYPE_CHECKING, final
+from collections.abc import Sequence
+from decimal import Decimal
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.ports import WorkTypeRepository
 from smr.gradebook.domain import (
     DEFAULT_SCHEME,
     ScoringMode,
@@ -16,18 +21,9 @@ from smr.gradebook.domain import (
     WorkTypeKindTakenError,
     WorkTypeNotFoundError,
 )
+from smr.roster.application.contracts import RosterApi
 
 from ._groups import open_group
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-    from decimal import Decimal
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.ports import WorkTypeRepository
-    from smr.roster.application.contracts import RosterApi
 
 
 def _fields(work_type: WorkType) -> dict[str, object]:

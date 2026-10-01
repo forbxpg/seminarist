@@ -2,18 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
 
-from smr.roster.domain import GroupArchivedError, GroupNotFoundError
-from smr.sessions.domain import SessionNotFoundError
-
-if TYPE_CHECKING:
-    import uuid
-
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Group
-    from smr.sessions.application.ports import SessionRepository
-    from smr.sessions.domain import Session
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Group, GroupArchivedError, GroupNotFoundError
+from smr.sessions.application.ports import SessionRepository
+from smr.sessions.domain import Session, SessionNotFoundError
 
 
 async def open_group(roster: RosterApi, group_id: uuid.UUID) -> Group:

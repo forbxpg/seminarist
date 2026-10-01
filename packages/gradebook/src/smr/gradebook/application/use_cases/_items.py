@@ -2,26 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from decimal import Decimal
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
-from smr.gradebook.domain import ItemNotFoundError, WorkTypeNotFoundError
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.ports import ItemRepository, WorkTypeRepository
+from smr.gradebook.application.services import Ledger
+from smr.gradebook.domain import GradeItem, ItemNotFoundError, WorkTypeNotFoundError
+from smr.roster.application.contracts import RosterApi
 
 from ._groups import open_group
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from decimal import Decimal
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.ports import ItemRepository, WorkTypeRepository
-    from smr.gradebook.application.services import Ledger
-    from smr.gradebook.domain import GradeItem
-    from smr.roster.application.contracts import RosterApi
 
 
 @final

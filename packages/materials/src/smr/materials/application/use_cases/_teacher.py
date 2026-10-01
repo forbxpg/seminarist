@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
-from smr.core.files import FileKind
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.core.files import FileKind, FileStore
+from smr.materials.application.ports import (
+    MaterialFileRepository,
+    MaterialRepository,
+)
 from smr.materials.domain import (
     EmptyMaterialError,
     Material,
@@ -15,24 +23,10 @@ from smr.materials.domain import (
     MaterialNotFoundError,
     MaterialStatus,
 )
+from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
-from smr.roster.domain import GroupArchivedError, GroupNotFoundError
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.core.files import FileStore
-    from smr.materials.application.ports import (
-        MaterialFileRepository,
-        MaterialRepository,
-    )
-    from smr.notifications.application.contracts import NotificationsApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Group
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Group, GroupArchivedError, GroupNotFoundError
 
 MATERIAL_KINDS: frozenset[FileKind] = frozenset(FileKind)
 

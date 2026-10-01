@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
 from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.core.files import FileKind
 from smr.homework.domain import SubmissionFile
@@ -13,12 +16,6 @@ from smr.homework.infrastructure.models import (
     FileModel,
     SubmissionModel,
 )
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 _Row = FileModel
 

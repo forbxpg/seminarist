@@ -1,0 +1,35 @@
+[project]
+name = "smr-worker"
+version = "0.1.0"
+description = "Worker and scheduler: delivers notices, queues reminders, backs up, purges."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiogram>=3.31.0,<4.0.0",
+    "dishka>=1.10.1,<2.0.0",
+    "smr-core",
+    "smr-gradebook",
+    "smr-homework",
+    "smr-materials",
+    "smr-notifications",
+    "smr-roster",
+    "taskiq>=0.13.0,<0.14.0",
+    "taskiq-redis>=1.2.4,<2.0.0",
+]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.worker"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-roster = { workspace = true }
+smr-gradebook = { workspace = true }
+smr-homework = { workspace = true }
+smr-materials = { workspace = true }
+smr-notifications = { workspace = true }

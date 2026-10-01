@@ -3,31 +3,29 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.core.audit import AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.roster.application.ports import GroupRepository, StudentRepository
 from smr.roster.domain import (
     AlreadyBoundError,
     BindingStatus,
+    Group,
     GroupArchivedError,
     InviteNotFoundError,
     NameTakenError,
     NotPendingError,
+    Student,
     StudentNotFoundError,
 )
 
 from ._audit import by_admin, by_student
 from ._results import Membership
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.roster.application.ports import GroupRepository, StudentRepository
-    from smr.roster.domain import Group, Student
 
 
 async def _open_group(groups: GroupRepository, invite_code: str) -> Group:

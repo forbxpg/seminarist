@@ -5,11 +5,21 @@ from __future__ import annotations
 import dataclasses
 import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from decimal import Decimal
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
-from smr.core.files import FileKind
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.core.files import FileKind, FileStore
+from smr.gradebook.application.contracts import GradebookApi
+from smr.homework.application.ports import (
+    AssignmentRepository,
+    FileRepository,
+    SubmissionRepository,
+)
 from smr.homework.domain import (
+    Assignment,
     DraftEmptyError,
     Submission,
     SubmissionClosedError,
@@ -17,27 +27,11 @@ from smr.homework.domain import (
     SubmissionStatus,
     TooManyFilesError,
 )
+from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import StudentNotFoundError
 
 from ._common import assignment_of, open_group, student_of
-
-if TYPE_CHECKING:
-    from decimal import Decimal
-
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.core.files import FileStore
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.homework.application.ports import (
-        AssignmentRepository,
-        FileRepository,
-        SubmissionRepository,
-    )
-    from smr.homework.domain import Assignment
-    from smr.roster.application.contracts import RosterApi
-
-    from ._upload import Upload
+from ._upload import Upload
 
 STUDENT_KINDS: frozenset[FileKind] = frozenset(FileKind)
 

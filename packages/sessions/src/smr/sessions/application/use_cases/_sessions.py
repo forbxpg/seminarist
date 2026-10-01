@@ -3,23 +3,19 @@
 from __future__ import annotations
 
 import uuid
-from typing import TYPE_CHECKING, final
+from collections.abc import Sequence
+from datetime import datetime
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.contracts import GradebookApi
+from smr.roster.application.contracts import RosterApi
+from smr.sessions.application.ports import BoardCallRepository, SessionRepository
 from smr.sessions.domain import Session
 
 from ._common import existing, open_group
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-    from datetime import datetime
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.sessions.application.ports import BoardCallRepository, SessionRepository
 
 
 @final

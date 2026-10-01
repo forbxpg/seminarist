@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
 
-from smr.homework.domain import AssignmentNotFoundError, NotYourAssignmentError
-from smr.roster.domain import GroupArchivedError, GroupNotFoundError
-
-if TYPE_CHECKING:
-    import uuid
-
-    from smr.homework.application.ports import AssignmentRepository
-    from smr.homework.domain import Assignment
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Group, Student
+from smr.homework.application.ports import AssignmentRepository
+from smr.homework.domain import (
+    Assignment,
+    AssignmentNotFoundError,
+    NotYourAssignmentError,
+)
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Group, GroupArchivedError, GroupNotFoundError, Student
 
 
 async def open_group(roster: RosterApi, group_id: uuid.UUID) -> Group:

@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Collection, Mapping
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.notifications.application.ports import Outbox, Preferences
+from smr.notifications.domain import NotificationKind
+from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import BindingStatus
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Collection, Mapping
-
-    from smr.core.access import AdminGuard
-    from smr.notifications.application.ports import Outbox, Preferences
-    from smr.notifications.domain import NotificationKind
-    from smr.roster.application.contracts import RosterApi
 
 
 def _key(dedupe_key: str | None, tg_user_id: int) -> str | None:

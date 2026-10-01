@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from datetime import datetime
+from typing import final
 
 from sqlalchemy import delete, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.roster.domain import Group, GroupSettings, GroupStatus
 from smr.roster.infrastructure.models import GroupModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from datetime import datetime
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @final

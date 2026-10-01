@@ -2,20 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from datetime import datetime
+from typing import final
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.roster.domain import BindingStatus, Student
 from smr.roster.infrastructure.models import STUDENT_NAME_UNIQUE, StudentModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from datetime import datetime
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 _Row = StudentModel
 

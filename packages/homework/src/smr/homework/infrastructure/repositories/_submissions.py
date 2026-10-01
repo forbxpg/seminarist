@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
 from sqlalchemy import delete, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.homework.domain import Submission, SubmissionStatus
 from smr.homework.infrastructure.models import AssignmentModel, SubmissionModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 _Row = SubmissionModel
 _LIVE = (SubmissionStatus.SUBMITTED.value, SubmissionStatus.GRADED.value)

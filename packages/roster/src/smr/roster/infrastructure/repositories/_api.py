@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
-from smr.roster.domain import BindingStatus
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from smr.roster.domain import BindingStatus, Group, Student
 
 from ._groups import SqlAlchemyGroups
 from ._students import SqlAlchemyStudents
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    from smr.roster.domain import Group, Student
 
 
 @final

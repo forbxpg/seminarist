@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from smr.roster.domain import Group, Student
+from smr.roster.domain import Group, Student
 
 
 @dataclass(frozen=True, slots=True)

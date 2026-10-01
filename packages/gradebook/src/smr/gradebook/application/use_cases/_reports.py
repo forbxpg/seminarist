@@ -2,23 +2,20 @@
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.gradebook.application.services import Ledger
 from smr.gradebook.scoring import (
     Bucket,
     StudentScore,
     distribution,
     rank,
 )
+from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import Student, StudentNotFoundError
-
-if TYPE_CHECKING:
-    import uuid
-
-    from smr.core.access import AdminGuard
-    from smr.gradebook.application.services import Ledger
-    from smr.roster.application.contracts import RosterApi
 
 
 @dataclass(frozen=True, slots=True)

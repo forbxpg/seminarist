@@ -50,11 +50,28 @@ runtime-evaluated-decorators = [
 # dishka always finalizes a generator provider, so a yield inside `async with` is safe.
 "**/di.py" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
 "**/di/**" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
+# dishka builds use cases, services and repositories from their `__init__` annotations
+# at runtime: the types they name must be importable, not hidden behind TYPE_CHECKING.
+"packages/*/src/smr/*/application/use_cases/**" = [
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+]
+"packages/*/src/smr/*/application/services/**" = [
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+]
+"packages/*/src/smr/*/infrastructure/repositories/**" = [
+    "typing-only-first-party-import",
+    "typing-only-standard-library-import",
+    "typing-only-third-party-import",
+]
 # Alembic loads revisions by path: their folders are not packages.
 "**/migrations/versions/*" = ["implicit-namespace-package", "line-too-long"]
 "apps/migrator/src/smr/migrator/env.py" = ["implicit-namespace-package"]
-# The backup task runs pg_dump, a program it trusts, with arguments it builds itself.
-"apps/worker/src/smr/worker/backup/**" = [
+# The backup runs pg_dump, a program it trusts, with arguments it builds itself.
+"packages/core/src/smr/core/backup/**" = [
     "subprocess-without-shell-equals-true",
     "suspicious-subprocess-import",
 ]

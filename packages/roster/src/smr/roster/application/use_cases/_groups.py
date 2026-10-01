@@ -4,9 +4,15 @@ from __future__ import annotations
 
 import dataclasses
 import uuid
+from collections.abc import Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.core.audit import AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.roster.application.ports import GroupRepository
 from smr.roster.domain import (
     Group,
     GroupArchivedError,
@@ -17,15 +23,6 @@ from smr.roster.domain import (
 )
 
 from ._audit import by_admin, by_system
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.roster.application.ports import GroupRepository
 
 
 async def _active(groups: GroupRepository, group_id: uuid.UUID) -> Group:

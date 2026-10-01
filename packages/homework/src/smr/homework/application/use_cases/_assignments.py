@@ -6,41 +6,35 @@ import asyncio
 import dataclasses
 import uuid
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from datetime import datetime
+from decimal import Decimal
+from typing import final
 
-from smr.core.audit import ActorKind, AuditEntry
-from smr.core.files import FileKind
+from smr.core.access import AdminGuard
+from smr.core.audit import ActorKind, AuditEntry, AuditLog
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.core.files import FileKind, FileStore
+from smr.gradebook.application.contracts import GradebookApi
 from smr.gradebook.domain import WorkTypeKind, WorkTypeNotFoundError
+from smr.homework.application.ports import (
+    AssignmentRepository,
+    FileRepository,
+    SubmissionRepository,
+)
 from smr.homework.domain import (
     Assignment,
     StatementFile,
     Submission,
     SubmissionStatus,
 )
+from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Student
 
 from ._common import assignment_of, open_group
 from ._upload import Upload
-
-if TYPE_CHECKING:
-    from datetime import datetime
-    from decimal import Decimal
-
-    from smr.core.access import AdminGuard
-    from smr.core.audit import AuditLog
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.core.files import FileStore
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.homework.application.ports import (
-        AssignmentRepository,
-        FileRepository,
-        SubmissionRepository,
-    )
-    from smr.notifications.application.contracts import NotificationsApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Student
-
 
 ALL_KINDS: frozenset[FileKind] = frozenset(FileKind)
 

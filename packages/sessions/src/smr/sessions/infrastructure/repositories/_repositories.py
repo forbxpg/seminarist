@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Mapping, Sequence
+from typing import final
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.sessions.domain import AttendanceStatus, BoardCall, BoardMode, Session
 from smr.sessions.infrastructure.models import (
@@ -13,12 +16,6 @@ from smr.sessions.infrastructure.models import (
     BoardCallModel,
     SessionModel,
 )
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Mapping, Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @final

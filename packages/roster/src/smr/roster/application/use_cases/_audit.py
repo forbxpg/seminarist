@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
+from collections.abc import Mapping
 
 from smr.core.audit import ActorKind, AuditEntry
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Mapping
 
 
 def by_admin(

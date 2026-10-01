@@ -2,26 +2,22 @@
 
 from __future__ import annotations
 
+import uuid
+from collections.abc import Mapping
 from decimal import Decimal
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.access import AdminGuard
 from smr.core.clock import MOSCOW
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.contracts import GradebookApi
 from smr.gradebook.domain import WorkTypeKind
-from smr.sessions.domain import AttendanceStatus, StudentNotInGroupError
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Student
+from smr.sessions.application.ports import AttendanceRepository, SessionRepository
+from smr.sessions.domain import AttendanceStatus, Session, StudentNotInGroupError
 
 from ._common import existing, open_group
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Mapping
-
-    from smr.core.access import AdminGuard
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Student
-    from smr.sessions.application.ports import AttendanceRepository, SessionRepository
-    from smr.sessions.domain import Session
 
 _ONE = Decimal(1)
 _ZERO = Decimal(0)

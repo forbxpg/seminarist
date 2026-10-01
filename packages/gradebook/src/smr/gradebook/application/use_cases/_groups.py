@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
 
+from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import Group, GroupArchivedError, GroupNotFoundError
-
-if TYPE_CHECKING:
-    import uuid
-
-    from smr.roster.application.contracts import RosterApi
 
 
 async def open_group(roster: RosterApi, group_id: uuid.UUID) -> Group:

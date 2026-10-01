@@ -3,36 +3,33 @@
 from __future__ import annotations
 
 import dataclasses
+import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, final
+from decimal import Decimal
+from typing import final
 
+from smr.core.access import AdminGuard
+from smr.core.database import UnitOfWork
+from smr.gradebook.application.contracts import GradebookApi
+from smr.homework.application.ports import (
+    AssignmentRepository,
+    FileRepository,
+    SubmissionRepository,
+)
 from smr.homework.domain import (
+    Assignment,
     Submission,
+    SubmissionFile,
     SubmissionNotFoundError,
     SubmissionStatus,
 )
+from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
-from smr.roster.domain import StudentNotFoundError
+from smr.roster.application.contracts import RosterApi
+from smr.roster.domain import Student, StudentNotFoundError
 
 from ._common import assignment_of
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-    from decimal import Decimal
-
-    from smr.core.access import AdminGuard
-    from smr.core.database import UnitOfWork
-    from smr.gradebook.application.contracts import GradebookApi
-    from smr.homework.application.ports import (
-        AssignmentRepository,
-        FileRepository,
-        SubmissionRepository,
-    )
-    from smr.homework.domain import Assignment, SubmissionFile
-    from smr.notifications.application.contracts import NotificationsApi
-    from smr.roster.application.contracts import RosterApi
-    from smr.roster.domain import Student
 
 
 @dataclass(frozen=True, slots=True)

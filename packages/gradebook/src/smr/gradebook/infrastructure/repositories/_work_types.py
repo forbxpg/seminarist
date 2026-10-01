@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+import uuid
+from collections.abc import Sequence
+from typing import final
 
 from sqlalchemy import delete, exists, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from smr.gradebook.domain import ScoringMode, WorkType, WorkTypeKind
 from smr.gradebook.infrastructure.models import EntryModel, WorkTypeModel
-
-if TYPE_CHECKING:
-    import uuid
-    from collections.abc import Sequence
-
-    from sqlalchemy.ext.asyncio import AsyncSession
 
 _Row = WorkTypeModel
 

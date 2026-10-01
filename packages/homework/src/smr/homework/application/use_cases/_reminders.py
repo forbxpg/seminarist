@@ -3,20 +3,18 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
+from smr.homework.application.ports import (
+    AssignmentRepository,
+    SubmissionRepository,
+)
+from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
+from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import BindingStatus
-
-if TYPE_CHECKING:
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.homework.application.ports import (
-        AssignmentRepository,
-        SubmissionRepository,
-    )
-    from smr.notifications.application.contracts import NotificationsApi
-    from smr.roster.application.contracts import RosterApi
 
 _LONGEST_LEAD = timedelta(days=7)
 

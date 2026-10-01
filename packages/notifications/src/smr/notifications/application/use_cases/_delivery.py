@@ -5,19 +5,18 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, final
+from typing import final
 
+from smr.core.clock import Clock
+from smr.core.database import UnitOfWork
 from smr.notifications.application.ports import (
     DeliveryError,
     DeliveryGaveUpError,
     DeliveryRetryError,
+    Outbox,
+    Sender,
 )
 from smr.notifications.domain import render
-
-if TYPE_CHECKING:
-    from smr.core.clock import Clock
-    from smr.core.database import UnitOfWork
-    from smr.notifications.application.ports import Outbox, Sender
 
 MAX_ATTEMPTS = 5
 BATCH = 25
