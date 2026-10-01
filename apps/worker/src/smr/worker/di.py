@@ -16,6 +16,7 @@ from smr.gradebook.di import GradebookProvider
 from smr.homework.di import HomeworkProvider
 from smr.materials.di import MaterialsProvider
 from smr.notifications.application.ports import Sender
+from smr.notifications.application.use_cases import DeliverPending
 from smr.notifications.di import NotificationsProvider
 from smr.roster.di import RosterProvider
 
@@ -53,6 +54,8 @@ class WorkerProvider(Provider):
 
         """
         return TelegramSender(bot)
+
+    deliver = provide(DeliverPending, scope=Scope.REQUEST)
 
     @provide(scope=Scope.APP)
     def backup(

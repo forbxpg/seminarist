@@ -1,6 +1,7 @@
 """Notifications' repositories, contract and use cases, for every app.
 
-The `Sender` is not here: only the worker delivers, and it provides its own.
+Delivery is not here: only the worker delivers, so it provides the `Sender` and
+`DeliverPending` itself, and the bot's container needs neither.
 """
 
 from __future__ import annotations
@@ -13,7 +14,6 @@ from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.application.ports import Outbox, Preferences
 from smr.notifications.application.services import Notifier
 from smr.notifications.application.use_cases import (
-    DeliverPending,
     PurgeOutbox,
     RemindersEnabled,
     SetReminders,
@@ -34,4 +34,4 @@ class NotificationsProvider(Provider):
     preferences = provide(SqlAlchemyPreferences, provides=Preferences)
     api = provide(Notifier, provides=NotificationsApi)
 
-    use_cases = provide_all(DeliverPending, PurgeOutbox, RemindersEnabled, SetReminders)
+    use_cases = provide_all(PurgeOutbox, RemindersEnabled, SetReminders)
