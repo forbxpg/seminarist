@@ -176,6 +176,28 @@ class GradebookApi(Protocol):
         """
         ...
 
+    async def edit_entry(
+        self,
+        entry_id: uuid.UUID,
+        points: Decimal,
+        *,
+        comment: str | None,
+        graded_by: int,
+    ) -> GradeEntry:
+        """Change the points of an entry.
+
+        Args:
+            entry_id: uuid.UUID - It.
+            points: Decimal - New points.
+            comment: str | None - New note.
+            graded_by: int - Teacher's Telegram id.
+
+        Returns:
+            GradeEntry - The changed entry.
+
+        """
+        ...
+
     async def delete_entry(self, entry_id: uuid.UUID, *, graded_by: int | None) -> None:
         """Delete an entry.
 

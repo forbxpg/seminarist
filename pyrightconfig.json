@@ -42,6 +42,20 @@
       "reportUnknownArgumentType": false,
       "reportUnusedCallResult": false
     },
+    {
+      "root": "packages/sessions/tests",
+      "extraPaths": [
+        "packages/core/tests/support",
+        "packages/roster/tests/support",
+        "packages/gradebook/tests/support",
+        "packages/sessions/tests/support"
+      ],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
     { "root": "packages" },
     { "root": "apps" }
   ]

@@ -1,0 +1,21 @@
+[project]
+name = "smr-sessions"
+version = "0.1.0"
+description = "Seminar sessions: attendance, board calls and the fair randomizer."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["smr-core", "smr-gradebook", "smr-roster"]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.sessions"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-gradebook = { workspace = true }
+smr-roster = { workspace = true }
