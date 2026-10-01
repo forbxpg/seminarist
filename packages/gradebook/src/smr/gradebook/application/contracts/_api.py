@@ -28,6 +28,18 @@ class GradebookApi(Protocol):
         """
         ...
 
+    async def entry(self, entry_id: uuid.UUID) -> GradeEntry | None:
+        """Read an entry.
+
+        Args:
+            entry_id: uuid.UUID - It.
+
+        Returns:
+            GradeEntry | None - It, or None.
+
+        """
+        ...
+
     async def work_types(self, group_id: uuid.UUID) -> list[WorkType]:
         """List a group's work types in report order.
 

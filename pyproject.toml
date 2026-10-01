@@ -21,6 +21,7 @@ pythonpath = [
     "packages/roster/tests/support",
     "packages/gradebook/tests/support",
     "packages/sessions/tests/support",
+    "packages/homework/tests/support",
 ]
 addopts = [
     "--strict-markers",
@@ -54,7 +55,13 @@ dev = [
 [[tool.importlinter.contracts]]
 name = "Packages know neither Telegram, nor the task queue, nor the apps"
 type = "forbidden"
-source_modules = ["smr.core", "smr.roster", "smr.gradebook", "smr.sessions"]
+source_modules = [
+    "smr.core",
+    "smr.roster",
+    "smr.gradebook",
+    "smr.sessions",
+    "smr.homework",
+]
 forbidden_modules = [
     "smr.migrator",
     "aiogram",
@@ -66,19 +73,24 @@ forbidden_modules = [
 name = "The kernel knows no domain"
 type = "forbidden"
 source_modules = ["smr.core"]
-forbidden_modules = ["smr.roster", "smr.gradebook", "smr.sessions"]
+forbidden_modules = ["smr.roster", "smr.gradebook", "smr.sessions", "smr.homework"]
 
 [[tool.importlinter.contracts]]
 name = "The roster depends on no feature"
 type = "forbidden"
 source_modules = ["smr.roster"]
-forbidden_modules = ["smr.gradebook", "smr.sessions"]
+forbidden_modules = ["smr.gradebook", "smr.sessions", "smr.homework"]
 
 [[tool.importlinter.contracts]]
 name = "The ledger knows nothing that writes to it"
 type = "forbidden"
 source_modules = ["smr.gradebook"]
-forbidden_modules = ["smr.sessions"]
+forbidden_modules = ["smr.sessions", "smr.homework"]
+
+[[tool.importlinter.contracts]]
+name = "Features that write to the ledger stay independent"
+type = "independence"
+modules = ["smr.sessions", "smr.homework"]
 
 [[tool.importlinter.contracts]]
 name = "Domain rules know no storage"
@@ -88,6 +100,7 @@ source_modules = [
     "smr.gradebook.domain",
     "smr.gradebook.scoring",
     "smr.sessions.domain",
+    "smr.homework.domain",
 ]
 forbidden_modules = ["sqlalchemy"]
 

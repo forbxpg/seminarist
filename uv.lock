@@ -7,6 +7,7 @@ members = [
     "seminarist",
     "smr-core",
     "smr-gradebook",
+    "smr-homework",
     "smr-migrator",
     "smr-roster",
     "smr-sessions",
@@ -913,6 +914,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "smr-homework"
+version = "0.1.0"
+source = { editable = "packages/homework" }
+dependencies = [
+    { name = "smr-core" },
+    { name = "smr-gradebook" },
+    { name = "smr-roster" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "smr-core", editable = "packages/core" },
+    { name = "smr-gradebook", editable = "packages/gradebook" },
+    { name = "smr-roster", editable = "packages/roster" },
+]
+
+[[package]]
 name = "smr-migrator"
 version = "0.1.0"
 source = { editable = "apps/migrator" }
@@ -920,6 +938,7 @@ dependencies = [
     { name = "alembic" },
     { name = "smr-core" },
     { name = "smr-gradebook" },
+    { name = "smr-homework" },
     { name = "smr-roster" },
     { name = "smr-sessions" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -930,6 +949,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.0,<2.0.0" },
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-gradebook", editable = "packages/gradebook" },
+    { name = "smr-homework", editable = "packages/homework" },
     { name = "smr-roster", editable = "packages/roster" },
     { name = "smr-sessions", editable = "packages/sessions" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.1,<3.0.0" },

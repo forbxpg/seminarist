@@ -88,6 +88,18 @@ class Ledger:
         """
         return await self._work_types.get(work_type_id)
 
+    async def entry(self, entry_id: uuid.UUID) -> GradeEntry | None:
+        """Read an entry.
+
+        Args:
+            entry_id: uuid.UUID - It.
+
+        Returns:
+            GradeEntry | None - It, or None.
+
+        """
+        return await self._entries.get(entry_id)
+
     async def work_types(self, group_id: uuid.UUID) -> list[WorkType]:
         """List a group's work types in report order.
 
