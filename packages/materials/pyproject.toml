@@ -1,0 +1,21 @@
+[project]
+name = "smr-materials"
+version = "0.1.0"
+description = "Seminar materials: cards with files, published to a group."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["smr-core", "smr-notifications", "smr-roster"]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.materials"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-notifications = { workspace = true }
+smr-roster = { workspace = true }

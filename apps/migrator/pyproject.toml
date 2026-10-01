@@ -9,6 +9,7 @@ dependencies = [
     "smr-core",
     "smr-gradebook",
     "smr-homework",
+    "smr-materials",
     "smr-notifications",
     "smr-roster",
     "smr-sessions",
@@ -34,3 +35,4 @@ smr-gradebook = { workspace = true }
 smr-sessions = { workspace = true }
 smr-homework = { workspace = true }
 smr-notifications = { workspace = true }
+smr-materials = { workspace = true }

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from smr.core.audit import AUDIT_METADATA
 from smr.gradebook.infrastructure.models import METADATA as GRADEBOOK_METADATA
 from smr.homework.infrastructure.models import METADATA as HOMEWORK_METADATA
+from smr.materials.infrastructure.models import METADATA as MATERIALS_METADATA
 from smr.notifications.infrastructure.models import (
     METADATA as NOTIFICATIONS_METADATA,
 )
@@ -31,4 +32,5 @@ def all_metadata() -> list[MetaData]:
         SESSIONS_METADATA,
         HOMEWORK_METADATA,
         NOTIFICATIONS_METADATA,
+        MATERIALS_METADATA,
     ]

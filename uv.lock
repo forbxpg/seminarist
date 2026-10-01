@@ -8,6 +8,7 @@ members = [
     "smr-core",
     "smr-gradebook",
     "smr-homework",
+    "smr-materials",
     "smr-migrator",
     "smr-notifications",
     "smr-roster",
@@ -934,6 +935,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "smr-materials"
+version = "0.1.0"
+source = { editable = "packages/materials" }
+dependencies = [
+    { name = "smr-core" },
+    { name = "smr-notifications" },
+    { name = "smr-roster" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "smr-core", editable = "packages/core" },
+    { name = "smr-notifications", editable = "packages/notifications" },
+    { name = "smr-roster", editable = "packages/roster" },
+]
+
+[[package]]
 name = "smr-migrator"
 version = "0.1.0"
 source = { editable = "apps/migrator" }
@@ -942,6 +960,7 @@ dependencies = [
     { name = "smr-core" },
     { name = "smr-gradebook" },
     { name = "smr-homework" },
+    { name = "smr-materials" },
     { name = "smr-notifications" },
     { name = "smr-roster" },
     { name = "smr-sessions" },
@@ -954,6 +973,7 @@ requires-dist = [
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-gradebook", editable = "packages/gradebook" },
     { name = "smr-homework", editable = "packages/homework" },
+    { name = "smr-materials", editable = "packages/materials" },
     { name = "smr-notifications", editable = "packages/notifications" },
     { name = "smr-roster", editable = "packages/roster" },
     { name = "smr-sessions", editable = "packages/sessions" },

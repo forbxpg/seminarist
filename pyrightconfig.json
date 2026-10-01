@@ -84,6 +84,20 @@
       "reportUnknownArgumentType": false,
       "reportUnusedCallResult": false
     },
+    {
+      "root": "packages/materials/tests",
+      "extraPaths": [
+        "packages/core/tests/support",
+        "packages/roster/tests/support",
+        "packages/notifications/tests/support",
+        "packages/materials/tests/integration"
+      ],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
     { "root": "packages" },
     { "root": "apps" }
   ]
