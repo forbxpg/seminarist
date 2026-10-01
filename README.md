@@ -9,10 +9,36 @@ in this repository.
 
 ## Run
 
+1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`) and copy its token.
+2. Find your Telegram user id, e.g. with [@userinfobot](https://t.me/userinfobot).
+3. `cp .env.example .env` and fill in `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_IDS`
+   (comma-separated ids of the teachers), `POSTGRES_PASSWORD` (the same one inside
+   `DATABASE_URL`) and `REDIS_PASSWORD`.
+4. `docker compose up -d --build`. The migrator applies the schema and exits; then the
+   bot, the worker and the scheduler start. Nothing listens on a host port.
+
+Then in Telegram: `/admin` → create a group → paste the roster → send the students the
+group's invite link. Each student picks their name; you approve the request.
+
+The machine has to be awake for the bot to answer; notices queued while it slept go
+out when it wakes.
+
+## Data
+
+Everything lives in `./data` (homework files, seminar PDFs, exports, backups) and in
+the `pgdata` volume. A backup runs daily at 03:00 and on "Бэкап сейчас" in `/admin`:
+`data/backups/backup-<time>/` holds `database.dump` (for `pg_restore`) and
+`files.tar.gz`; the newest 14 are kept. Point `STORAGE_BACKUP_DIR` at a synced folder
+to keep a copy off this machine.
+
+Restore the database:
+
 ```bash
-cp .env.example .env   # fill in the token, the admin ids and the passwords
-docker compose up -d --build
+docker compose exec -T db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < data/backups/<backup>/database.dump
 ```
+
+Students can see and delete what the bot keeps about them ("Мои данные",
+"Удалить мои данные"). Logs carry ids, never names or message texts.
 
 ## Develop
 
@@ -24,9 +50,27 @@ uv run pytest                    # unit tests
 uv run pytest -m integration     # needs Docker: PostgreSQL via testcontainers
 ```
 
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
+
 ## Layout
 
 | Path | What |
 |---|---|
-| `packages/core` | settings, database kit, audit log, file storage, clock |
+| `packages/core` | settings, database kit, audit log, file storage, clock, access, backup |
+| `packages/roster` | groups, students, binding a Telegram account to a name |
+| `packages/gradebook` | work types, the points ledger, totals, rank, board priority |
+| `packages/sessions` | seminars, attendance, board calls |
+| `packages/homework` | assignments, submissions with files, grading, export |
+| `packages/notifications` | the outbox of notices, reminder preferences |
+| `packages/materials` | seminar cards with files, publishing |
 | `apps/migrator` | Alembic over every package's revisions |
+| `apps/bot` | the Telegram interface: students' and teachers' dialogs |
+| `apps/worker` | taskiq worker and scheduler: delivery, reminders, backup, purge |
+
+Each package keeps its own PostgreSQL schema and is split into `domain`,
+`application` (use cases, ports, contracts) and `infrastructure`; import-linter keeps
+the boundaries (`pyproject.toml`).
+
+## License
+
+MIT
