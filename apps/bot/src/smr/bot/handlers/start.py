@@ -46,9 +46,14 @@ async def start(
     message: Message,
     dialog_manager: DialogManager,
     memberships: FromDishka[Memberships],
+    *,
+    is_admin: bool,
 ) -> None:
-    """Open the menu of a bound student, or say what is missing."""
+    """Open the teacher's menu, the menu of a bound student, or say what is missing."""
     if message.from_user is None:
+        return
+    if is_admin:
+        await dialog_manager.start(AdminSG.menu, mode=StartMode.RESET_STACK)
         return
     rows = await memberships(message.from_user.id)
     bound = [m for m in rows if m.student.binding is BindingStatus.BOUND]

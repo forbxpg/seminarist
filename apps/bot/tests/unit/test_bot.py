@@ -12,8 +12,10 @@ from aiogram.types import Chat, Message, User
 from smr.bot._app import build_dispatcher
 from smr.bot.di import make_container
 from smr.bot.exports import cell
+from smr.bot.handlers.start import start
 from smr.bot.middlewares import GateMiddleware
 from smr.bot.parsing import parse_moment, parse_points
+from smr.bot.states import AdminSG
 from smr.bot.texts import moment, points, safe
 from smr.core.access import AdminGuard
 from smr.core.clock import MOSCOW
@@ -142,3 +144,27 @@ async def test_the_dispatcher_assembles() -> None:
         assert dispatcher.sub_routers
     finally:
         await container.close()
+
+
+class _Manager:
+    def __init__(self) -> None:
+        self.started: list[object] = []
+
+    async def start(self, state: object, **_: object) -> None:
+        self.started.append(state)
+
+
+async def test_start_opens_the_teachers_menu_for_a_teacher() -> None:
+    """A teacher with no student binding gets the teacher's menu, not the invite hint."""
+    manager = _Manager()
+
+    async def no_memberships(_user_id: int) -> list[object]:
+        return []
+
+    await start(
+        _message("private"),
+        manager,
+        no_memberships,
+        is_admin=True,
+    )
+    assert manager.started == [AdminSG.menu]
