@@ -8,6 +8,7 @@ from typing import final
 from aiogram import Bot
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 
+from smr.bdz.di import BdzProvider
 from smr.core.backup import Backup
 from smr.core.clock import Clock
 from smr.core.config import DatabaseSettings, StorageSettings, TelegramSettings
@@ -18,6 +19,7 @@ from smr.materials.di import MaterialsProvider
 from smr.notifications.application.ports import Sender
 from smr.notifications.application.use_cases import DeliverPending
 from smr.notifications.di import NotificationsProvider
+from smr.review.di import ReviewProvider
 from smr.roster.di import RosterProvider
 
 from .telegram import TelegramSender
@@ -92,6 +94,8 @@ def make_container() -> AsyncContainer:
         NotificationsProvider(),
         HomeworkProvider(),
         MaterialsProvider(),
+        ReviewProvider(),
+        BdzProvider(),
         WorkerProvider(),
         validation_settings=CONTAINER_VALIDATION,
     )

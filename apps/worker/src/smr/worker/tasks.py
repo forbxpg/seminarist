@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from dishka.integrations.taskiq import FromDishka, inject
 
+from smr.bdz.application.use_cases import DeleteGroupBdzFiles
 from smr.core.backup import Backup
 from smr.core.clock import Clock
 from smr.core.config import StorageSettings
@@ -58,6 +59,7 @@ async def purge_expired(
     due: FromDishka[GroupsDueForPurge],
     homework_files: FromDishka[DeleteGroupFiles],
     material_files: FromDishka[DeleteGroupMaterialFiles],
+    bdz_files: FromDishka[DeleteGroupBdzFiles],
     purge_group: FromDishka[PurgeGroup],
     storage: FromDishka[StorageSettings],
     clock: FromDishka[Clock],
@@ -69,6 +71,7 @@ async def purge_expired(
     for group in await due():
         _ = await homework_files(group.group_id)
         _ = await material_files(group.group_id)
+        _ = await bdz_files(group.group_id)
         await purge_group(group.group_id)
         groups += 1
     logger.info("purged: notices=%d exports=%d groups=%d", notices, exports, groups)
