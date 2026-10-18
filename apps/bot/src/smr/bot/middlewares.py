@@ -100,6 +100,12 @@ class GateMiddleware(BaseMiddleware):
 class ConsentMiddleware(BaseMiddleware):
     """A bound student with an old notice sees it again before anything else."""
 
+    def __init__(self) -> None:
+        # The notice version only changes with a deploy, which restarts the process,
+        # so an account seen with every row current stays current until then.
+        # ponytail: grows by one int per student, an LRU if a bot ever serves thousands
+        self._current: set[int] = set()
+
     @override
     async def __call__(
         self,
@@ -125,6 +131,8 @@ class ConsentMiddleware(BaseMiddleware):
         user_id = _user_id(event)
         if manager is None or container is None or user_id is None:
             return await handler(event, data)
+        if user_id in self._current:
+            return await handler(event, data)
         dialog = cast("DialogManager", manager)
         if dialog.has_context() and dialog.current_context().state.group == ConsentSG:
             return await handler(event, data)
@@ -136,6 +144,8 @@ class ConsentMiddleware(BaseMiddleware):
             for row in rows
         )
         if not stale:
+            if all(row.student.consent_version == CONSENT_VERSION for row in rows):
+                self._current.add(user_id)
             return await handler(event, data)
         await dialog.start(ConsentSG.renew, mode=StartMode.RESET_STACK)
         return None
