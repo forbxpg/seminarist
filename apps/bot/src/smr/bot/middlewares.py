@@ -126,7 +126,7 @@ class ConsentMiddleware(BaseMiddleware):
         if manager is None or container is None or user_id is None:
             return await handler(event, data)
         dialog = cast("DialogManager", manager)
-        if dialog.current_context().state.group == ConsentSG:
+        if dialog.has_context() and dialog.current_context().state.group == ConsentSG:
             return await handler(event, data)
         memberships = await container.get(Memberships)
         rows = await memberships(user_id)

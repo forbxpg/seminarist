@@ -45,9 +45,9 @@ def verdict_messages(
             f"{_points(task.max_points)} — {safe(task.explanation)}"
         )
         if task.unreadable:
-            line += " (не удалось прочитать)"
+            line += " — не удалось прочитать"
         if task.manipulation:
-            line += " (обращение к проверяющему — 0)"
+            line += " — попытка обратиться к проверяющему — 0"
         blocks.append(line)
     return _pack(blocks, limit)
 

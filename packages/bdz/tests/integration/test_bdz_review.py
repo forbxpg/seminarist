@@ -17,7 +17,7 @@ from smr.core.audit import AUDIT_LOG_TABLE
 from smr.gradebook.domain import WorkTypeKind
 from smr.gradebook.infrastructure.models import EntryModel
 from smr.review.application.use_cases import TaskInput, VerdictInput
-from smr.review.domain import SchemeTask, StaleWorkError
+from smr.review.domain import AlreadyReviewedError, SchemeTask, StaleWorkError
 from smr.review.infrastructure.models import AppealModel, VerdictModel
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from roster_kit import Roster
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    from smr.bdz.domain import Bdz
+    from smr.bdz.domain import Bdz, BdzSubmission
 
 pytestmark = pytest.mark.integration
 
@@ -197,3 +197,134 @@ async def test_grade_appeal_and_teacher_final(
     assert appeal.resolution_verdict_id == final.verdict_id
     actions = await session.scalars(select(AUDIT_LOG_TABLE.c.action))
     assert {"review.published", "review.appealed", "review.finalized"} <= set(actions)
+
+
+async def _handed_in(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> tuple[Bdz, BdzSubmission]:
+    """Publish one task and accept one PDF.
+
+    Returns:
+        tuple[Bdz, BdzSubmission] - The assignment and the live version.
+
+    """
+    group = await roster.create(
+        TEACHER,
+        title="К01-261",
+        subject="ДМ",
+        semester="осень 2026",
+    )
+    _ = await roster.import_(TEACHER, group.group_id, "Иванов")
+    student = next(iter(await roster.api.students_of(group.group_id)))
+    _ = await roster.claim(group.invite_code, student.student_id, STUDENT, "v1")
+    _ = await roster.approve(TEACHER, student.student_id)
+    _ = await roster.accept(STUDENT)
+    types = {
+        item.kind: item for item in await gradebook.scheme(TEACHER, group.group_id)
+    }
+    now = roster.clock.now()
+    pdf = _pdf()
+    created = await bdz.create(
+        TEACHER,
+        group.group_id,
+        BdzDraft(
+            "Контрольная",
+            now + timedelta(days=2),
+            types[WorkTypeKind.TEST].work_type_id,
+            (SchemeTask(1, Decimal(10)),),
+        ),
+        _upload(pdf, now),
+        Upload(pdf, "tg-s", "uniq-s", now),
+    )
+    sent = await bdz.send(STUDENT, created.bdz_id, _upload(pdf, now))
+    return created, sent
+
+
+def _verdict(
+    sent: BdzSubmission,
+    *,
+    points: Decimal | None = None,
+    sha256: str | None = None,
+    unreadable: bool = False,
+    manipulation: bool = False,
+) -> VerdictInput:
+    score = Decimal(7) if points is None else points
+    return VerdictInput(
+        f"bdz:{sent.submission_id}",
+        sha256 or sent.sha256,
+        "m",
+        "",
+        (1,),
+        (
+            TaskInput(
+                1,
+                score,
+                "Верно.",
+                unreadable=unreadable,
+                unsure=False,
+                manipulation=manipulation,
+                pages=(1,),
+            ),
+        ),
+    )
+
+
+async def test_unreadable_page_writes_no_grade(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+    notifications: Notifications,
+    session: AsyncSession,
+) -> None:
+    """An unreadable page waits for the teacher and skips the ledger."""
+    created, sent = await _handed_in(bdz, roster, gradebook)
+    outcome = await bdz.submit(_verdict(sent, points=Decimal(0), unreadable=True))
+    assert outcome.status == "manual"
+    entry = await session.scalar(
+        select(EntryModel).where(EntryModel.item_id == created.item_id),
+    )
+    assert entry is None
+    kinds = [item.kind for item in await notifications.queued()]
+    assert "review_manual" in kinds
+
+
+async def test_stale_file_is_refused(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> None:
+    """A verdict about another file is refused."""
+    _, sent = await _handed_in(bdz, roster, gradebook)
+    with pytest.raises(StaleWorkError):
+        await bdz.submit(_verdict(sent, sha256="ab" * 32))
+
+
+async def test_second_verdict_is_refused(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> None:
+    """A live version is graded once."""
+    _, sent = await _handed_in(bdz, roster, gradebook)
+    _ = await bdz.submit(_verdict(sent))
+    with pytest.raises(AlreadyReviewedError):
+        await bdz.submit(_verdict(sent, points=Decimal(8)))
+
+
+async def test_manipulation_is_audited(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+    session: AsyncSession,
+) -> None:
+    """A task that addresses the grader scores zero and is audited."""
+    _, sent = await _handed_in(bdz, roster, gradebook)
+    outcome = await bdz.submit(
+        _verdict(sent, points=Decimal(0), manipulation=True),
+    )
+    assert outcome.status == "published"
+    assert outcome.total == Decimal(0)
+    actions = await session.scalars(select(AUDIT_LOG_TABLE.c.action))
+    assert "review.manipulation" in set(actions)

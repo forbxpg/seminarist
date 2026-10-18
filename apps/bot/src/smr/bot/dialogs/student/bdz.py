@@ -41,20 +41,23 @@ def _bdz(manager: DialogManager) -> uuid.UUID:
     return remembered_id(manager, "bdz_id")
 
 
-def _line(row: StudentBdz) -> str:
+def _status(row: StudentBdz) -> str:
     if row.submission is None:
-        status = "не сдано"
-    elif row.status is VerdictStatus.PUBLISHED and row.total is not None:
-        status = f"🤖 {points(row.total)} из {points(row.bdz.max_points)}"
-    elif row.status is VerdictStatus.MANUAL:
-        status = "у преподавателя"
-    elif row.status is VerdictStatus.APPEALED:
-        status = "апелляция рассматривается"
-    elif row.status is VerdictStatus.FINAL and row.total is not None:
-        status = f"✅ {points(row.total)} из {points(row.bdz.max_points)}"
-    else:
-        status = "ждёт проверки"
-    return f"{row.bdz.title} — {status}"
+        return "не сдано"
+    if row.status is VerdictStatus.PUBLISHED and row.total is not None:
+        return f"🤖 {points(row.total)} из {points(row.bdz.max_points)}"
+    if row.status is VerdictStatus.MANUAL:
+        return "у преподавателя"
+    if row.status is VerdictStatus.APPEALED:
+        return "апелляция рассматривается"
+    if row.status is VerdictStatus.FINAL and row.total is not None:
+        return f"✅ {points(row.total)} из {points(row.bdz.max_points)}"
+    return "ждёт проверки"
+
+
+def _line(row: StudentBdz) -> str:
+    due = moment(row.bdz.deadline)
+    return f"{row.bdz.title} · {due} · {_status(row)}"
 
 
 @inject
@@ -94,13 +97,12 @@ async def _card_getter(
     scheme = ", ".join(
         f"{task.number}: {points(task.max_points)}" for task in row.tasks
     )
-    sent = "ещё не сдано" if row.submission is None else _line(row)
     return {
         "text": (
             f"<b>{safe(row.bdz.title)}</b>\n"
             f"Срок: {moment(row.bdz.deadline)}\n"
             f"Задачи: {scheme}\n"
-            f"{sent}"
+            f"{_status(row)}"
         ),
         "can_send": row.status is not VerdictStatus.APPEALED,
         "send_label": (
@@ -130,7 +132,11 @@ async def _upload(
     manager: DialogManager,
     send: FromDishka[SendBdz],
 ) -> None:
-    if message.photo:
+    document = message.document
+    name = "" if document is None or document.file_name is None else document.file_name
+    mime = "" if document is None or document.mime_type is None else document.mime_type
+    pdf = mime == "application/pdf" or name.lower().endswith(".pdf")
+    if message.photo or not pdf:
         _ = await message.answer(_PHOTO)
         return
     if message.bot is None:

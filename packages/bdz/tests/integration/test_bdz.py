@@ -340,6 +340,11 @@ async def test_late_resubmission_voids_a_final_verdict(
     stored = await session.get(VerdictModel, final.verdict_id)
     assert stored is not None
     assert stored.status == VerdictStatus.VOIDED.value
+    entry = await session.scalar(
+        select(EntryModel).where(EntryModel.item_id == created.item_id),
+    )
+    assert entry is not None
+    assert entry.points == Decimal(5)
 
 
 async def test_resubmission_refused_while_appeal_open(

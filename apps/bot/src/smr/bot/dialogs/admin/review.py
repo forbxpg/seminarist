@@ -48,13 +48,22 @@ async def _queue_getter(
     return {"empty": not items, "items": items, "count": len(items)}
 
 
+@inject
 async def _picked(
-    _callback: CallbackQuery,
+    callback: CallbackQuery,
     _widget: object,
     manager: DialogManager,
     item_id: str,
+    opened: FromDishka[OpenForTeacher],
+    files: FromDishka[FileStore],
 ) -> None:
     manager.dialog_data["verdict_id"] = item_id
+    view = await opened(actor(manager), uuid.UUID(item_id))
+    manager.dialog_data["work_path"] = view.work_path
+    if callback.message is not None:
+        document = FSInputFile(files.path(view.work_path))
+        _ = await callback.message.answer_document(document)
+    manager.show_mode = ShowMode.SEND
     await manager.switch_to(ReviewSG.item)
 
 
@@ -148,7 +157,7 @@ review_dialog = Dialog(
                 id="item",
                 item_id_getter=itemgetter(1),
                 items="items",
-                on_click=_picked,
+                on_click=_picked,  # pyright: ignore[reportArgumentType]
             ),
             id="queue",
             width=1,
