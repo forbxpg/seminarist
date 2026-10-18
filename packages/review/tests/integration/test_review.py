@@ -198,6 +198,26 @@ async def test_appeal_then_teacher_lowers(
     assert opened.appeal.status.value == "resolved"
 
 
+async def test_manual_final_hides_the_agents_draft(
+    review: Review,
+    roster: Roster,
+    notifications: Notifications,
+) -> None:
+    """A grade the student never saw is not quoted back as "было"."""
+    work = review.source.add(await _student(roster), STUDENT, pages=4)
+    _ = await review.submit(_verdict(work, "3", unreadable=True))
+    _ = await review.finalize(
+        TEACHER,
+        await _current(review, work),
+        {1: Decimal(8)},
+        {},
+        "",
+    )
+    queued = await notifications.queued()
+    assert queued[-1].kind == "review_final"
+    assert queued[-1].payload["before"] is None
+
+
 async def _current(review: Review, work: WorkRef) -> uuid.UUID:
     view = await review.mine(STUDENT, "bdz", work.work_id)
     assert view is not None

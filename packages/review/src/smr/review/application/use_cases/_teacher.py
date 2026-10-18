@@ -293,7 +293,12 @@ class FinalizeByTeacher:
                     "title": work.title,
                     "total": _money(total),
                     "max": _money(sheet.max_points),
-                    "before": _money(old.total),
+                    # A manual verdict was never shown to the student: no "было".
+                    "before": (
+                        _money(old.total)
+                        if old.status is VerdictStatus.APPEALED
+                        else None
+                    ),
                 },
                 f"review:{final.verdict_id}",
             )
