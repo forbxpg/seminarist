@@ -88,6 +88,8 @@
       "root": "packages/review/tests",
       "extraPaths": [
         "packages/core/tests/support",
+        "packages/roster/tests/support",
+        "packages/notifications/tests/support",
         "packages/review/tests/support"
       ],
       "reportAny": false,

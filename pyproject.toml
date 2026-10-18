@@ -66,6 +66,7 @@ source_modules = [
     "smr.homework",
     "smr.notifications",
     "smr.materials",
+    "smr.review",
 ]
 forbidden_modules = [
     "smr.migrator",
@@ -85,6 +86,7 @@ forbidden_modules = [
     "smr.homework",
     "smr.notifications",
     "smr.materials",
+    "smr.review",
 ]
 
 [[tool.importlinter.contracts]]
@@ -97,19 +99,38 @@ forbidden_modules = [
     "smr.homework",
     "smr.notifications",
     "smr.materials",
+    "smr.review",
 ]
 
 [[tool.importlinter.contracts]]
 name = "Notifications know who to tell, not what happened"
 type = "forbidden"
 source_modules = ["smr.notifications"]
-forbidden_modules = ["smr.gradebook", "smr.sessions", "smr.homework", "smr.materials"]
+forbidden_modules = [
+    "smr.gradebook",
+    "smr.sessions",
+    "smr.homework",
+    "smr.materials",
+    "smr.review",
+]
 
 [[tool.importlinter.contracts]]
 name = "The ledger knows nothing that writes to it"
 type = "forbidden"
 source_modules = ["smr.gradebook"]
-forbidden_modules = ["smr.sessions", "smr.homework", "smr.materials"]
+forbidden_modules = ["smr.sessions", "smr.homework", "smr.materials", "smr.review"]
+
+[[tool.importlinter.contracts]]
+name = "The review knows nothing that owns the work"
+type = "forbidden"
+source_modules = ["smr.review"]
+forbidden_modules = [
+    "smr.homework",
+    "smr.sessions",
+    "smr.materials",
+    "smr.gradebook",
+    "smr.roster",
+]
 
 [[tool.importlinter.contracts]]
 name = "Features that write to the ledger stay independent"
@@ -127,6 +148,7 @@ source_modules = [
     "smr.homework.domain",
     "smr.notifications.domain",
     "smr.materials.domain",
+    "smr.review.domain",
 ]
 forbidden_modules = ["sqlalchemy"]
 

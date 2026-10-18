@@ -11,6 +11,7 @@ from smr.materials.infrastructure.models import METADATA as MATERIALS_METADATA
 from smr.notifications.infrastructure.models import (
     METADATA as NOTIFICATIONS_METADATA,
 )
+from smr.review.infrastructure.models import METADATA as REVIEW_METADATA
 from smr.roster.infrastructure.models import METADATA as ROSTER_METADATA
 from smr.sessions.infrastructure.models import METADATA as SESSIONS_METADATA
 
@@ -33,4 +34,5 @@ def all_metadata() -> list[MetaData]:
         HOMEWORK_METADATA,
         NOTIFICATIONS_METADATA,
         MATERIALS_METADATA,
+        REVIEW_METADATA,
     ]
