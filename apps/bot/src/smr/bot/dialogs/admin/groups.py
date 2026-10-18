@@ -21,9 +21,18 @@ from aiogram_dialog.widgets.kbd import (
 from aiogram_dialog.widgets.text import Const, Format
 from dishka.integrations.aiogram_dialog import FromDishka, inject
 
+from smr.bdz.application.use_cases import DeleteStudentBdzFiles
 from smr.bot.dialogs.common import actor, go, remembered_id, start_with
 from smr.bot.exports import write_sheet
-from smr.bot.states import AdminSG, GradebookSG, HomeworkSG, MaterialsSG, SessionsSG
+from smr.bot.states import (
+    AdminSG,
+    BdzSG,
+    GradebookSG,
+    HomeworkSG,
+    MaterialsSG,
+    ReviewSG,
+    SessionsSG,
+)
 from smr.bot.texts import safe
 from smr.core.backup import Backup, BackupError
 from smr.core.clock import Clock
@@ -33,6 +42,7 @@ from smr.gradebook.application.use_cases import GroupSheet
 from smr.homework.application.use_cases import DeleteStudentFiles
 from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
+from smr.review.application.use_cases import TeacherQueue
 from smr.roster.application.contracts import RosterApi
 from smr.roster.application.use_cases import (
     ApproveBinding,
@@ -79,9 +89,14 @@ def _group(manager: DialogManager) -> uuid.UUID:
 async def _menu_getter(
     dialog_manager: DialogManager,
     pending: FromDishka[PendingBindings],
+    queue: FromDishka[TeacherQueue],
     **_: _MIDDLEWARE,
 ) -> dict[str, object]:
-    return {"pending": len(await pending(actor(dialog_manager)))}
+    user_id = actor(dialog_manager)
+    return {
+        "pending": len(await pending(user_id)),
+        "review": len(await queue(user_id)),
+    }
 
 
 @inject
@@ -278,10 +293,12 @@ async def _remove(
     _button: Button,
     manager: DialogManager,
     files: FromDishka[DeleteStudentFiles],
+    bdz_files: FromDishka[DeleteStudentBdzFiles],
     remove: FromDishka[RemoveStudent],
 ) -> None:
     student_id = remembered_id(manager, "student_id")
     _ = await files([student_id])
+    _ = await bdz_files([student_id])
     _ = await remove(callback.from_user.id, student_id)
     _ = await callback.answer(
         "Удалён из списка вместе с баллами и файлами.",
@@ -489,6 +506,11 @@ groups_dialog = Dialog(
     Window(
         Const("👩‍🏫 Меню преподавателя"),
         SwitchTo(Const("🎓 Группы"), id="groups", state=AdminSG.groups),
+        Button(
+            Format("🧑‍⚖️ Ручная проверка ({review})"),
+            id="review",
+            on_click=start_with(ReviewSG.queue),
+        ),
         SwitchTo(Format("🙋 Заявки ({pending})"), id="pending", state=AdminSG.pending),
         Button(Const("💾 Бэкап сейчас"), id="backup", on_click=_backup),
         getter=_menu_getter,
@@ -560,6 +582,11 @@ groups_dialog = Dialog(
                 id="gradebook",
                 on_click=start_with(GradebookSG.types, "group_id"),
             ),
+        ),
+        Button(
+            Const("📘 БДЗ"),
+            id="bdz",
+            on_click=start_with(BdzSG.list, "group_id"),
         ),
         Button(Const("📥 Ведомость XLSX"), id="export", on_click=_export),
         Row(

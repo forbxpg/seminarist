@@ -14,12 +14,13 @@ from aiogram_dialog import setup_dialogs
 from dishka.integrations.aiogram import setup_dishka
 
 from smr.bot.dialogs.admin import admin_dialogs
+from smr.bot.dialogs.student.consent import consent_dialog
 from smr.bot.dialogs.student.join import join_dialog
 from smr.bot.dialogs.student.menu import student_dialog
 from smr.bot.handlers.bindings import router as bindings_router
 from smr.bot.handlers.errors import router as errors_router
 from smr.bot.handlers.start import router as start_router
-from smr.bot.middlewares import GateMiddleware
+from smr.bot.middlewares import ConsentMiddleware, GateMiddleware
 from smr.core.access import AdminGuard
 from smr.core.config import RedisSettings
 
@@ -52,9 +53,17 @@ def build_dispatcher(
     _ = dispatcher.message.outer_middleware(gate)
     _ = dispatcher.callback_query.outer_middleware(gate)
     dispatcher.include_routers(errors_router, start_router, bindings_router)
-    dispatcher.include_routers(join_dialog, student_dialog, *admin_dialogs())
+    dispatcher.include_routers(
+        join_dialog,
+        student_dialog,
+        consent_dialog,
+        *admin_dialogs(),
+    )
     _ = setup_dialogs(dispatcher)
     setup_dishka(container, router=dispatcher, auto_inject=True)
+    consent = ConsentMiddleware()
+    _ = dispatcher.message.middleware(consent)
+    _ = dispatcher.callback_query.middleware(consent)
     return dispatcher
 
 

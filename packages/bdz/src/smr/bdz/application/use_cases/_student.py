@@ -26,7 +26,12 @@ from smr.core.clock import Clock
 from smr.core.database import UnitOfWork
 from smr.core.files import FileStore, StoredFile
 from smr.review.application.contracts import ReviewApi
-from smr.review.domain import AppealOpenError, VerdictStatus, appeal_open_until
+from smr.review.domain import (
+    AppealOpenError,
+    SchemeTask,
+    VerdictStatus,
+    appeal_open_until,
+)
 from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import GroupArchivedError, GroupNotFoundError
 
@@ -236,6 +241,7 @@ class StudentBdz:
         total: Decimal | None - Its points.
         published_at: datetime | None - When the student was told.
         can_appeal: bool - Whether an appeal can still be filed.
+        tasks: tuple[SchemeTask, ...] - The point scheme.
 
     """
 
@@ -245,6 +251,7 @@ class StudentBdz:
     total: Decimal | None
     published_at: datetime | None
     can_appeal: bool
+    tasks: tuple[SchemeTask, ...]
 
 
 @final
@@ -287,7 +294,8 @@ class StudentBdzList:
             live = None
             if student is not None:
                 live = await self._submissions.live(bdz.bdz_id, student.student_id)
-            rows.append(await _view(self._reviews, self._clock, bdz, live))
+            tasks = await self._assignments.tasks(bdz.bdz_id)
+            rows.append(await _view(self._reviews, self._clock, bdz, live, tasks))
         return rows
 
 
@@ -296,6 +304,7 @@ async def _view(
     clock: Clock,
     bdz: Bdz,
     submission: BdzSubmission | None,
+    tasks: tuple[SchemeTask, ...],
 ) -> StudentBdz:
     status = None
     total = None
@@ -313,7 +322,15 @@ async def _view(
                 and until is not None
                 and clock.now() <= until
             )
-    return StudentBdz(bdz, submission, status, total, published_at, can_appeal)
+    return StudentBdz(
+        bdz,
+        submission,
+        status,
+        total,
+        published_at,
+        can_appeal,
+        tasks,
+    )
 
 
 async def _open(roster: RosterApi, group_id: uuid.UUID) -> None:

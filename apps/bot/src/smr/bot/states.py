@@ -30,6 +30,12 @@ class StudentSG(StatesGroup):
     scores = State()
     settings = State()
     forget = State()
+    bdz_list = State()
+    bdz = State()
+    bdz_upload = State()
+    bdz_verdict = State()
+    bdz_appeal = State()
+    bdz_appeal_confirm = State()
 
 
 @final
@@ -116,3 +122,39 @@ class GradebookSG(StatesGroup):
     grade_value = State()
     points_student = State()
     points_value = State()
+
+
+@final
+class BdzSG(StatesGroup):
+    """The teacher's БДЗ: the list, the card and the creation wizard."""
+
+    list = State()
+    card = State()
+    new_title = State()
+    new_type = State()
+    new_statement = State()
+    new_solutions = State()
+    new_scheme = State()
+    new_deadline = State()
+    new_confirm = State()
+    deadline = State()
+    roster = State()
+    delete = State()
+
+
+@final
+class ReviewSG(StatesGroup):
+    """The teacher's queue of manual checks and appeals."""
+
+    queue = State()
+    item = State()
+    grade = State()
+    comment = State()
+    confirm = State()
+
+
+@final
+class ConsentSG(StatesGroup):
+    """A student accepts the current privacy notice again."""
+
+    renew = State()

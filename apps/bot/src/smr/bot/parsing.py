@@ -5,6 +5,10 @@ from __future__ import annotations
 import re
 from datetime import datetime, time
 from decimal import Decimal, InvalidOperation
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from smr.core.clock import MOSCOW
 
@@ -72,3 +76,47 @@ def parse_points(text: str) -> Decimal:
         msg = "points are not negative and have at most two decimals"
         raise ValueError(msg)
     return value
+
+
+_SCORE = re.compile(r"(?P<number>\d+)\s*[:=]\s*(?P<points>-?\d+(?:[.,]\d+)?)")
+
+
+def parse_scores(text: str, numbers: Sequence[int]) -> dict[int, Decimal]:
+    """Read "1:3, 2:2.5 3:0": one score for every task, no extras.
+
+    Args:
+        text: str - What was typed. Commas, spaces and newlines separate pairs.
+        numbers: Sequence[int] - The task numbers the scheme has.
+
+    Returns:
+        dict[int, Decimal] - Points per task.
+
+    Raises:
+        ValueError: If a task is missing, repeated, unknown or negative.
+
+    """
+    found: dict[int, Decimal] = {}
+    for match in _SCORE.finditer(text):
+        number = int(match["number"])
+        if number in found:
+            msg = f"duplicate tasks: [{number}]"
+            raise ValueError(msg)
+        raw = match["points"]
+        if raw.startswith("-"):
+            msg = f"task {number}: points negative"
+            raise ValueError(msg)
+        value = Decimal(raw.replace(",", "."))
+        if value != value.quantize(Decimal("0.01")):
+            msg = f"task {number}: more than 2 decimals"
+            raise ValueError(msg)
+        found[number] = value
+    expected = set(numbers)
+    missing = [number for number in numbers if number not in found]
+    extra = sorted(set(found) - expected)
+    if missing:
+        msg = f"missing tasks: {missing}"
+        raise ValueError(msg)
+    if extra:
+        msg = f"extra tasks: {extra}"
+        raise ValueError(msg)
+    return found

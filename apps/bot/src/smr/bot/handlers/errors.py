@@ -10,11 +10,18 @@ from aiogram.types import ErrorEvent
 from aiogram_dialog import DialogManager
 from aiogram_dialog.api.exceptions import UnknownIntent, UnknownState
 
+from smr.bdz.domain import BdzError
 from smr.core.access import NotAdminError
-from smr.core.files import FileTooLargeError, UnsupportedFileError
+from smr.core.files import (
+    FileTooLargeError,
+    PdfBrokenError,
+    PdfLockedError,
+    UnsupportedFileError,
+)
 from smr.gradebook.domain import GradebookError
 from smr.homework.domain import HomeworkError
 from smr.materials.domain import MaterialsError
+from smr.review.domain import AppealNotAllowedError, ReviewError
 from smr.roster.domain import GroupArchivedError, RosterError
 from smr.sessions.domain import SessionsError
 
@@ -27,6 +34,10 @@ _KNOWN: tuple[type[Exception], ...] = (
     SessionsError,
     HomeworkError,
     MaterialsError,
+    BdzError,
+    ReviewError,
+    PdfBrokenError,
+    PdfLockedError,
     ValueError,
 )
 
@@ -109,10 +120,36 @@ _REASONS: dict[str, str] = {
     "TooManyFilesError": "слишком много файлов",
     "MaterialNotFoundError": "материал не найден",
     "EmptyMaterialError": "в карточке нет файлов",
+    "WorkTypeNotProportionalError": (
+        "БДЗ ставится на вид работы с долей баллов, не на накопительный"
+    ),
+    "NotAPdfError": "нужен один PDF-файл",
+    "PdfLockedError": "PDF защищён паролем — снимите пароль и пришлите снова",
+    "PdfBrokenError": "не получается открыть PDF — пересоберите файл",
+    "TooManyPagesError": "слишком много страниц (больше 60)",
+    "ConsentRequiredError": "сначала примите обновлённое согласие: /start",
+    "AppealOpenError": "пока идёт апелляция, новую версию прислать нельзя",
+    "AppealTextError": "опишите, с чем не согласны: от 10 до 2000 символов",
+    "InvalidSchemeError": (
+        "разбалловка вида 1:3, 2:5 — задачи по порядку, баллы больше нуля"
+    ),
+    "BdzLockedError": "работы уже сдают — разбалловку и файлы менять нельзя",
+    "BdzNotFoundError": "БДЗ не найдено",
+    "NotYourBdzError": "это БДЗ не вашей группы",
+}
+
+
+_APPEAL = {
+    "not_published": "апелляция доступна только на опубликованную оценку",
+    "already_appealed": "апелляция уже подана",
+    "too_late": "срок апелляции прошёл",
+    "teacher_final": "оценку преподавателя оспорить нельзя",
 }
 
 
 def _reason(error: Exception) -> str:
+    if isinstance(error, AppealNotAllowedError):
+        return _APPEAL[error.reason]
     name = type(error).__name__
     if name in _REASONS:
         return _REASONS[name]

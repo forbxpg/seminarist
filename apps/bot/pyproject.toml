@@ -10,11 +10,13 @@ dependencies = [
     "dishka>=1.10.1,<2.0.0",
     "openpyxl>=3.1.5,<4.0.0",
     "redis>=8.1.0,<9.0.0",
+    "smr-bdz",
     "smr-core",
     "smr-gradebook",
     "smr-homework",
     "smr-materials",
     "smr-notifications",
+    "smr-review",
     "smr-roster",
     "smr-sessions",
 ]
@@ -32,6 +34,7 @@ build-backend = "uv_build"
 module-name = "smr.bot"
 
 [tool.uv.sources]
+smr-bdz = { workspace = true }
 smr-core = { workspace = true }
 smr-roster = { workspace = true }
 smr-gradebook = { workspace = true }
@@ -39,3 +42,4 @@ smr-sessions = { workspace = true }
 smr-homework = { workspace = true }
 smr-materials = { workspace = true }
 smr-notifications = { workspace = true }
+smr-review = { workspace = true }

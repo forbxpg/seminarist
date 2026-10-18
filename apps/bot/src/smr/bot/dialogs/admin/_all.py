@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .bdz import bdz_dialog
 from .gradebook import gradebook_dialog
 from .groups import groups_dialog
 from .homework import homework_dialog
 from .materials import materials_dialog
+from .review import review_dialog
 from .sessions import sessions_dialog
 
 if TYPE_CHECKING:
@@ -27,4 +29,6 @@ def admin_dialogs() -> list[Dialog]:
         homework_dialog,
         materials_dialog,
         gradebook_dialog,
+        bdz_dialog,
+        review_dialog,
     ]

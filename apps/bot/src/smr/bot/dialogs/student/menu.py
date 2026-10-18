@@ -15,7 +15,9 @@ from aiogram_dialog.widgets.kbd import Button, Row, ScrollingGroup, Select, Swit
 from aiogram_dialog.widgets.text import Const, Format
 from dishka.integrations.aiogram_dialog import FromDishka, inject
 
+from smr.bdz.application.use_cases import DeleteStudentBdzFiles
 from smr.bot.dialogs.common import actor, go, remembered_id
+from smr.bot.dialogs.student.bdz import student_bdz_windows
 from smr.bot.files import receive, send_file
 from smr.bot.states import StudentSG
 from smr.bot.texts import moment, points, safe
@@ -406,10 +408,13 @@ async def _forget(
     manager: DialogManager,
     memberships: FromDishka[Memberships],
     files: FromDishka[DeleteStudentFiles],
+    bdz_files: FromDishka[DeleteStudentBdzFiles],
     forget: FromDishka[ForgetAccount],
 ) -> None:
     rows = await memberships(callback.from_user.id)
-    _ = await files([m.student.student_id for m in rows])
+    student_ids = [m.student.student_id for m in rows]
+    _ = await files(student_ids)
+    _ = await bdz_files(student_ids)
     _ = await forget(callback.from_user.id)
     _ = await callback.answer("Готово: привязка и файлы удалены.", show_alert=True)
     await manager.done()
@@ -437,8 +442,9 @@ student_dialog = Dialog(
         Format("<b>{name}</b>\n{group}"),
         Row(
             SwitchTo(Const("📝 Домашки"), id="hw", state=StudentSG.homework),
-            SwitchTo(Const("📚 Семинары"), id="mat", state=StudentSG.materials),
+            SwitchTo(Const("📘 БДЗ"), id="bdz", state=StudentSG.bdz_list),
         ),
+        SwitchTo(Const("📚 Семинары"), id="mat", state=StudentSG.materials),
         Row(
             SwitchTo(Const("📊 Мои баллы"), id="sc", state=StudentSG.scores),
             SwitchTo(Const("⚙️ Настройки"), id="set", state=StudentSG.settings),
@@ -560,4 +566,5 @@ student_dialog = Dialog(
         Button(Const("Нет"), id="no", on_click=go(StudentSG.settings)),
         state=StudentSG.forget,
     ),
+    *student_bdz_windows(),
 )
