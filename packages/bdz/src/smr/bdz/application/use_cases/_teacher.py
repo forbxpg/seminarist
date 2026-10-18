@@ -9,6 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import final
 
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.domain import (
     Bdz,
     BdzDraft,
@@ -17,10 +18,6 @@ from smr.bdz.domain import (
     InvalidSchemeError,
     SubmissionStatus,
     WorkTypeNotProportionalError,
-)
-from smr.bdz.infrastructure.repositories import (
-    SqlAlchemyAssignments,
-    SqlAlchemySubmissions,
 )
 from smr.core.access import AdminGuard
 from smr.core.audit import ActorKind, AuditEntry, AuditLog
@@ -113,7 +110,7 @@ class CreateBdz:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
+        assignments: AssignmentRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
         notifications: NotificationsApi,
@@ -124,7 +121,7 @@ class CreateBdz:
         guard: AdminGuard,
         limits: BdzLimits,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
+        self._assignments: AssignmentRepository = assignments
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
         self._notifications: NotificationsApi = notifications
@@ -308,14 +305,14 @@ class UpdateBdzDeadline:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
+        assignments: AssignmentRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
         audit: AuditLog,
         uow: UnitOfWork,
         guard: AdminGuard,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
+        self._assignments: AssignmentRepository = assignments
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
         self._audit: AuditLog = audit
@@ -386,8 +383,8 @@ class DeleteBdz:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
         reviews: ReviewApi,
@@ -396,8 +393,8 @@ class DeleteBdz:
         uow: UnitOfWork,
         guard: AdminGuard,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
         self._reviews: ReviewApi = reviews
@@ -448,13 +445,13 @@ class ListBdz:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         reviews: ReviewApi,
         guard: AdminGuard,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._reviews: ReviewApi = reviews
         self._guard: AdminGuard = guard
 
@@ -484,14 +481,14 @@ class BdzRoster:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         reviews: ReviewApi,
         guard: AdminGuard,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._reviews: ReviewApi = reviews
         self._guard: AdminGuard = guard

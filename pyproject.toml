@@ -186,3 +186,27 @@ allow_indirect_imports = true
 name = "The bot and the worker deploy separately"
 type = "independence"
 modules = ["smr.bot", "smr.worker", "smr.review_mcp"]
+
+[[tool.importlinter.contracts]]
+name = "Use cases know ports, not the tables behind them"
+type = "forbidden"
+source_modules = [
+    "smr.roster.application",
+    "smr.gradebook.application",
+    "smr.sessions.application",
+    "smr.homework.application",
+    "smr.notifications.application",
+    "smr.materials.application",
+    "smr.review.application",
+    "smr.bdz.application",
+]
+forbidden_modules = [
+    "smr.roster.infrastructure",
+    "smr.gradebook.infrastructure",
+    "smr.sessions.infrastructure",
+    "smr.homework.infrastructure",
+    "smr.notifications.infrastructure",
+    "smr.materials.infrastructure",
+    "smr.review.infrastructure",
+    "smr.bdz.infrastructure",
+]

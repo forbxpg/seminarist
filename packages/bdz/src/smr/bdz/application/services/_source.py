@@ -7,11 +7,8 @@ from collections.abc import Sequence
 from decimal import Decimal
 from typing import final
 
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.domain import SubmissionStatus
-from smr.bdz.infrastructure.repositories import (
-    SqlAlchemyAssignments,
-    SqlAlchemySubmissions,
-)
 from smr.gradebook.application.contracts import GradebookApi
 from smr.review.application.ports import TaskSheet, WorkRef
 from smr.roster.application.contracts import RosterApi
@@ -25,13 +22,13 @@ class BdzReviewSource:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         gradebook: GradebookApi,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._gradebook: GradebookApi = gradebook
 

@@ -6,10 +6,7 @@ import uuid
 from collections.abc import Sequence
 from typing import final
 
-from smr.bdz.infrastructure.repositories import (
-    SqlAlchemyAssignments,
-    SqlAlchemySubmissions,
-)
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.core.database import UnitOfWork
 from smr.core.files import FileStore
 from smr.review.application.contracts import ReviewApi
@@ -21,14 +18,14 @@ class DeleteStudentBdzFiles:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         reviews: ReviewApi,
         files: FileStore,
         uow: UnitOfWork,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._reviews: ReviewApi = reviews
         self._files: FileStore = files
         self._uow: UnitOfWork = uow
@@ -59,14 +56,14 @@ class DeleteGroupBdzFiles:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         reviews: ReviewApi,
         files: FileStore,
         uow: UnitOfWork,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._reviews: ReviewApi = reviews
         self._files: FileStore = files
         self._uow: UnitOfWork = uow

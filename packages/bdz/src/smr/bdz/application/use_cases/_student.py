@@ -8,6 +8,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import final
 
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.domain import (
     Bdz,
     BdzNotFoundError,
@@ -15,10 +16,6 @@ from smr.bdz.domain import (
     ConsentRequiredError,
     NotYourBdzError,
     SubmissionStatus,
-)
-from smr.bdz.infrastructure.repositories import (
-    SqlAlchemyAssignments,
-    SqlAlchemySubmissions,
 )
 from smr.core.audit import ActorKind, AuditEntry, AuditLog
 from smr.core.clock import Clock
@@ -45,8 +42,8 @@ class SendBdz:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         reviews: ReviewApi,
         files: FileStore,
@@ -55,8 +52,8 @@ class SendBdz:
         clock: Clock,
         limits: BdzLimits,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._reviews: ReviewApi = reviews
         self._files: FileStore = files
@@ -197,10 +194,10 @@ class BdzStatement:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
+        assignments: AssignmentRepository,
         roster: RosterApi,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
+        self._assignments: AssignmentRepository = assignments
         self._roster: RosterApi = roster
 
     async def __call__(self, tg_user_id: int, bdz_id: uuid.UUID) -> tuple[str, str]:
@@ -257,14 +254,14 @@ class StudentBdzList:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         reviews: ReviewApi,
         clock: Clock,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._reviews: ReviewApi = reviews
         self._clock: Clock = clock

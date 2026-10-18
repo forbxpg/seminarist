@@ -7,6 +7,7 @@ from typing import final
 
 from dishka import Provider, Scope, provide, provide_all
 
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.application.services import BdzReviewSource
 from smr.bdz.application.use_cases import (
     BdzLimits,
@@ -41,8 +42,8 @@ class BdzProvider(Provider):
 
     scope = Scope.REQUEST
 
-    assignments = provide(SqlAlchemyAssignments)
-    submissions = provide(SqlAlchemySubmissions)
+    assignments = provide(SqlAlchemyAssignments, provides=AssignmentRepository)
+    submissions = provide(SqlAlchemySubmissions, provides=SubmissionRepository)
     source = provide(BdzReviewSource)
 
     use_cases = provide_all(
@@ -87,8 +88,8 @@ class BdzProvider(Provider):
     @provide
     def export(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         reviews: ReviewApi,
         files: FileStore,
@@ -99,8 +100,8 @@ class BdzProvider(Provider):
         """Build the export that writes under the data directory.
 
         Args:
-            assignments: SqlAlchemyAssignments - The assignments.
-            submissions: SqlAlchemySubmissions - The versions.
+            assignments: AssignmentRepository - The assignments.
+            submissions: SubmissionRepository - The versions.
             roster: RosterApi - The roster.
             reviews: ReviewApi - The verdicts.
             files: FileStore - The disk.

@@ -8,11 +8,8 @@ import zipfile
 from pathlib import Path
 from typing import final
 
+from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.domain import BdzNotFoundError, SubmissionStatus, folder_name
-from smr.bdz.infrastructure.repositories import (
-    SqlAlchemyAssignments,
-    SqlAlchemySubmissions,
-)
 from smr.core.access import AdminGuard
 from smr.core.clock import MOSCOW, Clock
 from smr.core.files import FileStore
@@ -29,8 +26,8 @@ class ExportBdz:
 
     def __init__(
         self,
-        assignments: SqlAlchemyAssignments,
-        submissions: SqlAlchemySubmissions,
+        assignments: AssignmentRepository,
+        submissions: SubmissionRepository,
         roster: RosterApi,
         reviews: ReviewApi,
         files: FileStore,
@@ -38,8 +35,8 @@ class ExportBdz:
         clock: Clock,
         data_dir: Path,
     ) -> None:
-        self._assignments: SqlAlchemyAssignments = assignments
-        self._submissions: SqlAlchemySubmissions = submissions
+        self._assignments: AssignmentRepository = assignments
+        self._submissions: SubmissionRepository = submissions
         self._roster: RosterApi = roster
         self._reviews: ReviewApi = reviews
         self._files: FileStore = files
