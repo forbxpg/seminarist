@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": ["mcp__seminarist-review__*", "Read(./**)"],
+    "deny": [
+      "Bash",
+      "Edit",
+      "Write",
+      "NotebookEdit",
+      "WebFetch",
+      "WebSearch"
+    ]
+  }
+}

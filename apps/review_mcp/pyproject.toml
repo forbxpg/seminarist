@@ -1,0 +1,36 @@
+[project]
+name = "smr-review-mcp"
+version = "0.1.0"
+description = "MCP server the grading agent uses to read PDFs and submit verdicts."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "dishka>=1.10.1,<2.0.0",
+    "mcp>=2.3.0,<3",
+    "smr-bdz",
+    "smr-core",
+    "smr-gradebook",
+    "smr-notifications",
+    "smr-review",
+    "smr-roster",
+]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[project.scripts]
+smr-review-mcp = "smr.review_mcp:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.review_mcp"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-roster = { workspace = true }
+smr-gradebook = { workspace = true }
+smr-notifications = { workspace = true }
+smr-review = { workspace = true }
+smr-bdz = { workspace = true }

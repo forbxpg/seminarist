@@ -169,7 +169,7 @@ forbidden_modules = ["sqlalchemy"]
 [[tool.importlinter.contracts]]
 name = "Apps go through use cases, never straight to the tables"
 type = "forbidden"
-source_modules = ["smr.bot", "smr.worker"]
+source_modules = ["smr.bot", "smr.worker", "smr.review_mcp"]
 forbidden_modules = [
     "smr.roster.infrastructure",
     "smr.gradebook.infrastructure",
@@ -177,10 +177,12 @@ forbidden_modules = [
     "smr.homework.infrastructure",
     "smr.notifications.infrastructure",
     "smr.materials.infrastructure",
+    "smr.review.infrastructure",
+    "smr.bdz.infrastructure",
 ]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "The bot and the worker deploy separately"
 type = "independence"
-modules = ["smr.bot", "smr.worker"]
+modules = ["smr.bot", "smr.worker", "smr.review_mcp"]

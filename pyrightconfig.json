@@ -129,6 +129,15 @@
       "reportUnusedCallResult": false
     },
     {
+      "root": "apps/review_mcp/tests",
+      "extraPaths": ["packages/core/tests/support"],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
+    {
       "root": "apps/worker/tests",
       "reportAny": false,
       "reportPrivateUsage": false,

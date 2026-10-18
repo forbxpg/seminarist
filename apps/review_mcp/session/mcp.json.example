@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "seminarist-review": {
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "/ABS/PATH/compose.yaml",
+        "exec",
+        "-T",
+        "bot",
+        "smr-review-mcp"
+      ]
+    }
+  }
+}
