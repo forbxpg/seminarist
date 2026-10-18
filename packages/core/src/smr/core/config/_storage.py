@@ -18,6 +18,7 @@ class StorageSettings(BaseSettings):
         backup_dir: Path - Where the daily backups go; best synced off the machine.
         max_file_bytes: int - Largest accepted file; Telegram lets a bot download 20 MB.
         max_files_per_submission: int - Most files one homework submission may hold.
+        bdz_max_pages: int - Most pages one БДЗ PDF may have.
 
     """
 
@@ -27,3 +28,4 @@ class StorageSettings(BaseSettings):
     backup_dir: Path
     max_file_bytes: int = 20 * 1024 * 1024
     max_files_per_submission: int = 20
+    bdz_max_pages: int = 60

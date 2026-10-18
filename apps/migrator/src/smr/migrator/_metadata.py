@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from smr.bdz.infrastructure.models import METADATA as BDZ_METADATA
 from smr.core.audit import AUDIT_METADATA
 from smr.gradebook.infrastructure.models import METADATA as GRADEBOOK_METADATA
 from smr.homework.infrastructure.models import METADATA as HOMEWORK_METADATA
@@ -35,4 +36,5 @@ def all_metadata() -> list[MetaData]:
         NOTIFICATIONS_METADATA,
         MATERIALS_METADATA,
         REVIEW_METADATA,
+        BDZ_METADATA,
     ]

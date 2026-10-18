@@ -99,6 +99,22 @@
       "reportUnusedCallResult": false
     },
     {
+      "root": "packages/bdz/tests",
+      "extraPaths": [
+        "packages/core/tests/support",
+        "packages/roster/tests/support",
+        "packages/gradebook/tests/support",
+        "packages/notifications/tests/support",
+        "packages/review/tests/support",
+        "packages/bdz/tests/support"
+      ],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
+    {
       "root": "packages/materials/tests",
       "extraPaths": [
         "packages/core/tests/support",

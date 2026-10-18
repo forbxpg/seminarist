@@ -1,0 +1,29 @@
+[project]
+name = "smr-bdz"
+version = "0.1.0"
+description = "Big homework: one PDF, a point scheme, and agent review."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "smr-core",
+    "smr-gradebook",
+    "smr-notifications",
+    "smr-review",
+    "smr-roster",
+]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.bdz"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-gradebook = { workspace = true }
+smr-notifications = { workspace = true }
+smr-review = { workspace = true }
+smr-roster = { workspace = true }

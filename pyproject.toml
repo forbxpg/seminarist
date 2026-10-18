@@ -24,6 +24,7 @@ pythonpath = [
     "packages/homework/tests/support",
     "packages/notifications/tests/support",
     "packages/review/tests/support",
+    "packages/bdz/tests/support",
 ]
 addopts = [
     "--strict-markers",
@@ -67,6 +68,7 @@ source_modules = [
     "smr.notifications",
     "smr.materials",
     "smr.review",
+    "smr.bdz",
 ]
 forbidden_modules = [
     "smr.migrator",
@@ -87,6 +89,7 @@ forbidden_modules = [
     "smr.notifications",
     "smr.materials",
     "smr.review",
+    "smr.bdz",
 ]
 
 [[tool.importlinter.contracts]]
@@ -100,6 +103,7 @@ forbidden_modules = [
     "smr.notifications",
     "smr.materials",
     "smr.review",
+    "smr.bdz",
 ]
 
 [[tool.importlinter.contracts]]
@@ -112,19 +116,27 @@ forbidden_modules = [
     "smr.homework",
     "smr.materials",
     "smr.review",
+    "smr.bdz",
 ]
 
 [[tool.importlinter.contracts]]
 name = "The ledger knows nothing that writes to it"
 type = "forbidden"
 source_modules = ["smr.gradebook"]
-forbidden_modules = ["smr.sessions", "smr.homework", "smr.materials", "smr.review"]
+forbidden_modules = [
+    "smr.sessions",
+    "smr.homework",
+    "smr.materials",
+    "smr.review",
+    "smr.bdz",
+]
 
 [[tool.importlinter.contracts]]
 name = "The review knows nothing that owns the work"
 type = "forbidden"
 source_modules = ["smr.review"]
 forbidden_modules = [
+    "smr.bdz",
     "smr.homework",
     "smr.sessions",
     "smr.materials",
@@ -135,7 +147,7 @@ forbidden_modules = [
 [[tool.importlinter.contracts]]
 name = "Features that write to the ledger stay independent"
 type = "independence"
-modules = ["smr.sessions", "smr.homework", "smr.materials"]
+modules = ["smr.sessions", "smr.homework", "smr.materials", "smr.bdz"]
 
 [[tool.importlinter.contracts]]
 name = "Domain rules know no storage"
@@ -149,6 +161,7 @@ source_modules = [
     "smr.notifications.domain",
     "smr.materials.domain",
     "smr.review.domain",
+    "smr.bdz.domain",
 ]
 forbidden_modules = ["sqlalchemy"]
 

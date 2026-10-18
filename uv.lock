@@ -5,6 +5,7 @@ requires-python = ">=3.13"
 [manifest]
 members = [
     "seminarist",
+    "smr-bdz",
     "smr-bot",
     "smr-core",
     "smr-gradebook",
@@ -1493,6 +1494,27 @@ dev = [
 ]
 
 [[package]]
+name = "smr-bdz"
+version = "0.1.0"
+source = { editable = "packages/bdz" }
+dependencies = [
+    { name = "smr-core" },
+    { name = "smr-gradebook" },
+    { name = "smr-notifications" },
+    { name = "smr-review" },
+    { name = "smr-roster" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "smr-core", editable = "packages/core" },
+    { name = "smr-gradebook", editable = "packages/gradebook" },
+    { name = "smr-notifications", editable = "packages/notifications" },
+    { name = "smr-review", editable = "packages/review" },
+    { name = "smr-roster", editable = "packages/roster" },
+]
+
+[[package]]
 name = "smr-bot"
 version = "0.1.0"
 source = { editable = "apps/bot" }
@@ -1611,6 +1633,7 @@ version = "0.1.0"
 source = { editable = "apps/migrator" }
 dependencies = [
     { name = "alembic" },
+    { name = "smr-bdz" },
     { name = "smr-core" },
     { name = "smr-gradebook" },
     { name = "smr-homework" },
@@ -1625,6 +1648,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.20.0,<2.0.0" },
+    { name = "smr-bdz", editable = "packages/bdz" },
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-gradebook", editable = "packages/gradebook" },
     { name = "smr-homework", editable = "packages/homework" },
