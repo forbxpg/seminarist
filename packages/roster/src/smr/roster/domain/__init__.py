@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ._consent import CONSENT_VERSION
 from ._errors import (
     AlreadyBoundError,
     DuplicateNameError,
@@ -19,6 +20,7 @@ from ._names import MAX_NAME_LENGTH, normalize_name, parse_roster
 from ._student import BindingStatus, Student
 
 __all__ = (
+    "CONSENT_VERSION",
     "MAX_NAME_LENGTH",
     "AlreadyBoundError",
     "BindingStatus",

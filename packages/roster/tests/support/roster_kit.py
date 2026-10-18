@@ -12,6 +12,7 @@ from smr.core.audit import SqlAlchemyAuditLog
 from smr.core.clock import FixedClock
 from smr.core.database import SqlAlchemyUnitOfWork
 from smr.roster.application.use_cases import (
+    AcceptConsent,
     ApproveBinding,
     ArchiveGroup,
     ClaimableNames,
@@ -67,6 +68,7 @@ class Roster:
         self.claim = ClaimStudent(groups, students, uow, audit, self.clock)
         self.pending = PendingBindings(groups, students, guard)
         self.approve = ApproveBinding(students, uow, audit, guard)
+        self.accept = AcceptConsent(students, uow, audit, self.clock)
         self.reject = RejectBinding(students, uow, audit, guard)
         self.unbind = Unbind(students, uow, audit, guard)
         self.memberships = Memberships(groups, students)

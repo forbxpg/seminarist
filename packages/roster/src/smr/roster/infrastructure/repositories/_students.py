@@ -147,6 +147,29 @@ class SqlAlchemyStudents:
             update(_Row).where(_Row.id == student_id).values(binding=binding.value),
         )
 
+    async def set_consent(self, tg_user_id: int, version: str, at: datetime) -> int:
+        """Record the current notice on every bound row of an account.
+
+        Args:
+            tg_user_id: int - The account.
+            version: str - The notice it accepted.
+            at: datetime - When.
+
+        Returns:
+            int - How many rows were updated.
+
+        """
+        updated = await self._session.scalars(
+            update(_Row)
+            .where(
+                _Row.tg_user_id == tg_user_id,
+                _Row.binding == BindingStatus.BOUND.value,
+            )
+            .values(consent_version=version, consent_at=at)
+            .returning(_Row.id),
+        )
+        return len(updated.all())
+
     async def release(self, student_id: uuid.UUID) -> None:
         """Unbind a row: forget its account and consent.
 

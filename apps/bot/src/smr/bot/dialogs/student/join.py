@@ -16,7 +16,7 @@ from dishka.integrations.aiogram_dialog import FromDishka, inject
 
 from smr.bot.dialogs.common import go, start_value
 from smr.bot.states import JoinSG
-from smr.bot.texts import CONSENT, CONSENT_VERSION, safe
+from smr.bot.texts import CONSENT, safe
 from smr.core.access import AdminGuard
 from smr.roster.application.contracts import RosterApi
 from smr.roster.application.use_cases import (
@@ -25,7 +25,11 @@ from smr.roster.application.use_cases import (
     Membership,
     ResolveInvite,
 )
-from smr.roster.domain import AlreadyBoundError, NameTakenError
+from smr.roster.domain import (
+    CONSENT_VERSION,
+    AlreadyBoundError,
+    NameTakenError,
+)
 
 logger = logging.getLogger(__name__)
 

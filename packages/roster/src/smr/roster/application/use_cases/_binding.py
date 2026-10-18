@@ -13,6 +13,7 @@ from smr.core.clock import Clock
 from smr.core.database import UnitOfWork
 from smr.roster.application.ports import GroupRepository, StudentRepository
 from smr.roster.domain import (
+    CONSENT_VERSION,
     AlreadyBoundError,
     BindingStatus,
     Group,
@@ -347,6 +348,52 @@ class Memberships:
             if group is not None and group.is_active:
                 result.append(Membership(group=group, student=student))
         return result
+
+
+@final
+class AcceptConsent:
+    """A student accepts the current privacy notice on every bound row."""
+
+    def __init__(
+        self,
+        students: StudentRepository,
+        uow: UnitOfWork,
+        audit: AuditLog,
+        clock: Clock,
+    ) -> None:
+        self._students: StudentRepository = students
+        self._uow: UnitOfWork = uow
+        self._audit: AuditLog = audit
+        self._clock: Clock = clock
+
+    async def __call__(self, tg_user_id: int) -> int:
+        """Record the acceptance.
+
+        Args:
+            tg_user_id: int - The account.
+
+        Returns:
+            int - How many bound rows were updated.
+
+        """
+        now = self._clock.now()
+        async with self._uow:
+            bound = [
+                row
+                for row in await self._students.of_account(tg_user_id)
+                if row.binding is BindingStatus.BOUND
+            ]
+            updated = await self._students.set_consent(tg_user_id, CONSENT_VERSION, now)
+            for row in bound:
+                await self._audit.record(
+                    by_student(
+                        row.student_id,
+                        "roster.consent",
+                        after={"version": CONSENT_VERSION},
+                    ),
+                )
+            await self._uow.commit()
+        return updated
 
 
 @final

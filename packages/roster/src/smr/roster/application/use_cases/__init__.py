@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ._binding import (
+    AcceptConsent,
     ApproveBinding,
     ClaimableNames,
     ClaimStudent,
@@ -26,6 +27,7 @@ from ._results import ImportResult, Membership
 from ._roster import ImportRoster, ListStudents, RemoveStudent, RenameStudent
 
 __all__ = (
+    "AcceptConsent",
     "ApproveBinding",
     "ArchiveGroup",
     "ClaimStudent",

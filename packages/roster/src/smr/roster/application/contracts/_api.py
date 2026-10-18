@@ -50,6 +50,18 @@ class RosterApi(Protocol):
         """
         ...
 
+    async def consented(self, student_id: uuid.UUID) -> bool:
+        """Tell whether a row accepted the current privacy notice.
+
+        Args:
+            student_id: uuid.UUID - The row.
+
+        Returns:
+            bool - True when its consent version is the current one.
+
+        """
+        ...
+
     async def bound_student(
         self,
         tg_user_id: int,

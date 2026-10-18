@@ -9,6 +9,7 @@ from dishka import Provider, Scope, provide, provide_all
 from smr.roster.application.contracts import RosterApi
 from smr.roster.application.ports import GroupRepository, StudentRepository
 from smr.roster.application.use_cases import (
+    AcceptConsent,
     ApproveBinding,
     ArchiveGroup,
     ClaimableNames,
@@ -48,6 +49,7 @@ class RosterProvider(Provider):
     api = provide(SqlAlchemyRosterApi, provides=RosterApi)
 
     use_cases = provide_all(
+        AcceptConsent,
         ApproveBinding,
         ArchiveGroup,
         ClaimStudent,

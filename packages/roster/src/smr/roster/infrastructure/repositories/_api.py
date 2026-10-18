@@ -8,7 +8,7 @@ from typing import final
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from smr.roster.domain import BindingStatus, Group, Student
+from smr.roster.domain import CONSENT_VERSION, BindingStatus, Group, Student
 
 from ._groups import SqlAlchemyGroups
 from ._students import SqlAlchemyStudents
@@ -57,6 +57,19 @@ class SqlAlchemyRosterApi:
 
         """
         return await self._students.of_group(group_id)
+
+    async def consented(self, student_id: uuid.UUID) -> bool:
+        """Tell whether a row accepted the current privacy notice.
+
+        Args:
+            student_id: uuid.UUID - The row.
+
+        Returns:
+            bool - True when its consent version is the current one.
+
+        """
+        student = await self._students.get(student_id)
+        return student is not None and student.consent_version == CONSENT_VERSION
 
     async def bound_student(
         self,
