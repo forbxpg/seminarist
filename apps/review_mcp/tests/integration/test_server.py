@@ -244,3 +244,26 @@ async def test_refusal_carries_reason(database_url: str, tmp_path: Path) -> None
     assert refused.is_error
     text = " ".join(block.text for block in refused.content if block.type == "text")
     assert "missing tasks" in text
+
+
+async def test_missing_file_is_refused_with_reason(
+    database_url: str,
+    tmp_path: Path,
+) -> None:
+    """A work whose PDF left the disk is refused with a reason, not a bare error."""
+    container = make_container(_Settings(database_url, tmp_path))
+    work_ref, task_key, _ = await _work(container)
+    for path in (tmp_path / "files").rglob("*.pdf"):
+        path.unlink()
+    try:
+        async with Client(build_server(container)) as client:
+            refused = await client.call_tool(
+                "get_work_pages",
+                {"work_ref": work_ref, "start": 1, "count": 1},
+            )
+    finally:
+        await _forget(container, task_key)
+        await container.close()
+    assert refused.is_error
+    text = " ".join(block.text for block in refused.content if block.type == "text")
+    assert "file is gone" in text

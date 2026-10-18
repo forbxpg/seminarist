@@ -193,7 +193,12 @@ async def _images(
     count: int,
     heading: str,
 ) -> list[TextContent | Image]:
-    rendered = await render_pages(files.path(relative), start, count)
+    path = files.path(relative)
+    if not path.is_file():
+        # The student deleted their data: the row stays, the PDF does not.
+        msg = "the file is gone: skip this work"
+        raise ToolError(msg)
+    rendered = await render_pages(path, start, count)
     end = start + len(rendered) - 1
     window = f"pages {start}..{end} of {total}"
     text = f"{heading}\n{window}" if heading else window
