@@ -40,6 +40,23 @@ docker compose exec -T db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_US
 Students can see and delete what the bot keeps about them ("Мои данные",
 "Удалить мои данные"). Logs carry ids, never names or message texts.
 
+## БДЗ и проверка агентом
+
+A teacher publishes a big homework (БДЗ) from the group menu: a statement PDF, a
+solutions PDF the students never receive, a point scheme (`1:3, 2:5`) and a deadline.
+It has to sit on a proportional work type. A student sends one PDF; a later PDF
+replaces it and voids the current verdict, including after the deadline and after a
+teacher's final grade. The journal keeps the last published total until the next
+published or final verdict.
+
+Grading runs in a session outside this repository. Copy
+`apps/review_mcp/session/` (see its README), point it at the running bot and say
+«проверь все непроверенные работы». The agent reads page images through
+`smr-review-mcp` and never sees a name. A clean verdict is published to the student;
+an unreadable page or a low-confidence grade waits for the teacher. The student can
+appeal a published grade once, within seven days. Accept the current privacy notice
+before sending: it says an assistant checks the pages.
+
 ## Develop
 
 ```bash
@@ -63,9 +80,12 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 | `packages/homework` | assignments, submissions with files, grading, export |
 | `packages/notifications` | the outbox of notices, reminder preferences |
 | `packages/materials` | seminar cards with files, publishing |
+| `packages/review` | agent verdicts, the teacher's queue, appeals |
+| `packages/bdz` | big homework: a PDF, a point scheme, the review source |
 | `apps/migrator` | Alembic over every package's revisions |
 | `apps/bot` | the Telegram interface: students' and teachers' dialogs |
 | `apps/worker` | taskiq worker and scheduler: delivery, reminders, backup, purge |
+| `apps/review_mcp` | the MCP server the grading agent uses |
 
 Each package keeps its own PostgreSQL schema and is split into `domain`,
 `application` (use cases, ports, contracts) and `infrastructure`; import-linter keeps
