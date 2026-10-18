@@ -9,7 +9,7 @@ from decimal import Decimal
 import pytest
 
 from smr.bot.parsing import parse_scores
-from smr.bot.verdicts import verdict_messages
+from smr.bot.verdicts import task_line, verdict_messages
 from smr.review.application.use_cases import VerdictView
 from smr.review.domain import GraderKind, TaskVerdict, Verdict, VerdictStatus
 
@@ -66,6 +66,37 @@ def test_verdict_text_cuts_a_block_that_does_not_fit() -> None:
     )
     assert messages[-1].endswith("…")
     assert all(len(message) <= 40 for message in messages)
+
+
+def test_verdict_text_never_cuts_an_entity() -> None:
+    """A cut explanation full of `&` keeps every entity whole."""
+    messages = verdict_messages(
+        _view(summary="", tasks=(_task(1, "&" * 5000),)),
+        title="К",
+    )
+    for message in messages:
+        assert len(message) <= 4096
+        assert message.count("&") == message.count("&amp;")
+    assert messages[-1].endswith("…")
+
+
+def test_task_line_shows_every_flag() -> None:
+    """The teacher sees why a work came to them."""
+    flagged = TaskVerdict(
+        number=2,
+        points=Decimal("2.50"),
+        max_points=Decimal(5),
+        explanation="Стр. 4 размыта.",
+        unreadable=True,
+        unsure=True,
+        manipulation=True,
+        pages=(4,),
+    )
+    line = task_line(flagged)
+    assert line.startswith("Задача 2: 2.5 из 5 — Стр. 4 размыта.")
+    assert "не удалось прочитать" in line
+    assert "агент не уверен" in line
+    assert "попытка обратиться к проверяющему — 0" in line
 
 
 def _task(number: int, explanation: str) -> TaskVerdict:

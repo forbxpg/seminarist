@@ -18,6 +18,7 @@ from smr.bot.dialogs.common import actor, remembered_id
 from smr.bot.parsing import parse_scores
 from smr.bot.states import ReviewSG
 from smr.bot.texts import safe
+from smr.bot.verdicts import breakdown
 from smr.core.files import FileStore
 from smr.review.application.use_cases import (
     FinalizeByTeacher,
@@ -63,6 +64,8 @@ async def _picked(
     if callback.message is not None:
         document = FSInputFile(files.path(view.work_path))
         _ = await callback.message.answer_document(document)
+        for text in breakdown(view.verdict, title=view.sheet.title):
+            _ = await callback.message.answer(text)
     manager.show_mode = ShowMode.SEND
     await manager.switch_to(ReviewSG.item)
 
@@ -74,14 +77,14 @@ async def _item_getter(
     **_: _MIDDLEWARE,
 ) -> dict[str, object]:
     view = await opened(actor(dialog_manager), _verdict(dialog_manager))
+    flagged = [
+        task.number
+        for task in view.verdict.tasks
+        if task.unreadable or task.unsure or task.manipulation
+    ]
     lines = [
-        f"<b>{safe(view.sheet.title)}</b>",
-        safe(view.verdict.summary) if view.verdict.summary else "",
-        *(
-            f"Задача {task.number}: {task.points} из {task.max_points} — "
-            f"{safe(task.explanation)}"
-            for task in view.verdict.tasks
-        ),
+        f"<b>{safe(view.sheet.title)}</b> — разбор агента выше.",
+        f"Флаги агента в задачах: {', '.join(map(str, flagged))}" if flagged else "",
     ]
     if view.appeal is not None:
         lines.append(f"Апелляция: {safe(view.appeal.text)}")
