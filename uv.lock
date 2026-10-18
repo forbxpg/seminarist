@@ -12,6 +12,7 @@ members = [
     "smr-materials",
     "smr-migrator",
     "smr-notifications",
+    "smr-review",
     "smr-roster",
     "smr-sessions",
     "smr-worker",
@@ -1646,6 +1647,21 @@ dependencies = [
 requires-dist = [
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-roster", editable = "packages/roster" },
+]
+
+[[package]]
+name = "smr-review"
+version = "0.1.0"
+source = { editable = "packages/review" }
+dependencies = [
+    { name = "smr-core" },
+    { name = "smr-notifications" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "smr-core", editable = "packages/core" },
+    { name = "smr-notifications", editable = "packages/notifications" },
 ]
 
 [[package]]

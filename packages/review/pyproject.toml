@@ -1,0 +1,20 @@
+[project]
+name = "smr-review"
+version = "0.1.0"
+description = "Verdicts and appeals for work an agent or the teacher grades."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["smr-core", "smr-notifications"]
+# Internal to the workspace: PyPI refuses an upload with this classifier.
+classifiers = ["Private :: Do Not Upload"]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "smr.review"
+
+[tool.uv.sources]
+smr-core = { workspace = true }
+smr-notifications = { workspace = true }

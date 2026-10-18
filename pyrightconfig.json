@@ -85,6 +85,18 @@
       "reportUnusedCallResult": false
     },
     {
+      "root": "packages/review/tests",
+      "extraPaths": [
+        "packages/core/tests/support",
+        "packages/review/tests/support"
+      ],
+      "reportAny": false,
+      "reportPrivateUsage": false,
+      "reportUnknownMemberType": false,
+      "reportUnknownArgumentType": false,
+      "reportUnusedCallResult": false
+    },
+    {
       "root": "packages/materials/tests",
       "extraPaths": [
         "packages/core/tests/support",

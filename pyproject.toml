@@ -23,6 +23,7 @@ pythonpath = [
     "packages/sessions/tests/support",
     "packages/homework/tests/support",
     "packages/notifications/tests/support",
+    "packages/review/tests/support",
 ]
 addopts = [
     "--strict-markers",
