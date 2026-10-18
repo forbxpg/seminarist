@@ -119,16 +119,23 @@ class Notifier:
         self,
         kind: NotificationKind,
         payload: Mapping[str, object],
+        dedupe_key: str | None = None,
     ) -> None:
         """Tell every teacher.
 
         Args:
             kind: NotificationKind - What about.
             payload: Mapping[str, object] - The values of the text.
+            dedupe_key: str | None - What makes a repeat a repeat, per teacher.
 
         """
         for admin in sorted(self._guard.admin_ids):
-            _ = await self._outbox.add(admin, kind, payload, None)
+            _ = await self._outbox.add(
+                admin,
+                kind,
+                payload,
+                _key(dedupe_key, admin),
+            )
 
     async def muted(self, student_ids: Collection[uuid.UUID]) -> set[uuid.UUID]:
         """Tell which students turned reminders off.

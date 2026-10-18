@@ -76,12 +76,14 @@ class NotificationsApi(Protocol):
         self,
         kind: NotificationKind,
         payload: Mapping[str, object],
+        dedupe_key: str | None = None,
     ) -> None:
         """Tell every teacher.
 
         Args:
             kind: NotificationKind - What about.
             payload: Mapping[str, object] - The values of the text.
+            dedupe_key: str | None - What makes a repeat a repeat, per teacher.
 
         """
         ...

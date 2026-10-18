@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING
 import pytest
 from roster_kit import STUDENT, TEACHER
 
+from smr.core.access import AdminGuard
+from smr.notifications.application.services import Notifier
 from smr.notifications.domain import NotificationKind
+from smr.notifications.infrastructure.repositories import (
+    SqlAlchemyOutbox,
+    SqlAlchemyPreferences,
+)
 
 if TYPE_CHECKING:
     from notifications_kit import Notifications
@@ -93,6 +99,32 @@ async def test_admins_are_told_of_requests(notifications: Notifications) -> None
         {"group": "К01", "name": "Иванов"},
     )
     assert [row.tg_user_id for row in await notifications.queued()] == [TEACHER]
+
+
+async def test_admins_share_a_dedupe_prefix(
+    roster: Roster,
+    notifications: Notifications,
+) -> None:
+    """Each teacher gets an appeal, and a repeat under the same key does not."""
+    notifier = Notifier(
+        SqlAlchemyOutbox(notifications.session),
+        SqlAlchemyPreferences(notifications.session),
+        roster.api,
+        AdminGuard({1, 2}),
+    )
+    await notifier.notify_admins(
+        NotificationKind.BINDING_REQUESTED,
+        {"group": "К01", "name": "Иванов"},
+        "appeal:abc",
+    )
+    await notifier.notify_admins(
+        NotificationKind.BINDING_REQUESTED,
+        {"group": "К01", "name": "Иванов"},
+        "appeal:abc",
+    )
+    rows = await notifications.queued()
+    assert {row.dedupe_key for row in rows} == {"appeal:abc:1", "appeal:abc:2"}
+    assert len(rows) == 2
 
 
 async def test_reminders_can_be_muted(

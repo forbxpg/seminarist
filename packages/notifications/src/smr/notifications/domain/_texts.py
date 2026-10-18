@@ -78,6 +78,55 @@ def _binding_rejected(p: Mapping[str, object]) -> str:
     )
 
 
+def _pages(payload: Mapping[str, object]) -> str:
+    raw = payload.get("pages")
+    if not isinstance(raw, list) or not raw:
+        return ""
+    numbers = [item for item in raw if isinstance(item, int)]
+    return ", ".join(str(number) for number in numbers)
+
+
+def _bdz_published(p: Mapping[str, object]) -> str:
+    return (
+        f"📘 Новое БДЗ: <b>{_text(p, 'title')}</b>. "
+        f"Срок: {_moment(p, 'deadline')} (МСК). Условие — в «БДЗ»."
+    )
+
+
+def _review_published(p: Mapping[str, object]) -> str:
+    return (
+        f"🤖 Ваше БДЗ <b>{_text(p, 'title')}</b> проверил ИИ-ассистент: "
+        f"{_text(p, 'total')} из {_text(p, 'max')}. "
+        "Разбор по задачам — в «БДЗ». Не согласны — подайте апелляцию до "
+        f"{_moment(p, 'appeal_until')}; её проверит преподаватель."
+    )
+
+
+def _review_manual(p: Mapping[str, object]) -> str:
+    pages = _pages(p)
+    unread = f" Не удалось прочитать страницы: {pages}." if pages else ""
+    return (
+        f"🧑‍🏫 Ваше БДЗ <b>{_text(p, 'title')}</b> передано преподавателю "
+        f"на ручную проверку.{unread} До дедлайна можно прислать скан получше."
+    )
+
+
+def _review_final(p: Mapping[str, object]) -> str:
+    before = p.get("before")
+    was = f" (было {_text(p, 'before')})" if before else ""
+    return (
+        f"✅ Преподаватель проверил БДЗ <b>{_text(p, 'title')}</b>: "
+        f"{_text(p, 'total')} из {_text(p, 'max')}{was}. Это окончательная оценка."
+    )
+
+
+def _appeal_filed(p: Mapping[str, object]) -> str:
+    return (
+        f"⚖️ Апелляция по БДЗ <b>{_text(p, 'title')}</b> "
+        f"(работа №{_text(p, 'work_no')}). Откройте «Ручная проверка» в /admin."
+    )
+
+
 _RENDERERS: dict[NotificationKind, Callable[[Mapping[str, object]], str]] = {
     NotificationKind.ASSIGNMENT_PUBLISHED: _assignment,
     NotificationKind.MATERIAL_PUBLISHED: _material,
@@ -86,6 +135,11 @@ _RENDERERS: dict[NotificationKind, Callable[[Mapping[str, object]], str]] = {
     NotificationKind.BINDING_REQUESTED: _binding_requested,
     NotificationKind.BINDING_APPROVED: _binding_approved,
     NotificationKind.BINDING_REJECTED: _binding_rejected,
+    NotificationKind.BDZ_PUBLISHED: _bdz_published,
+    NotificationKind.REVIEW_PUBLISHED: _review_published,
+    NotificationKind.REVIEW_MANUAL: _review_manual,
+    NotificationKind.REVIEW_FINAL: _review_final,
+    NotificationKind.APPEAL_FILED: _appeal_filed,
 }
 
 

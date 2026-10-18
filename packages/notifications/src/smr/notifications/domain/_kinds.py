@@ -15,3 +15,8 @@ class NotificationKind(StrEnum):
     BINDING_REQUESTED = "binding_requested"
     BINDING_APPROVED = "binding_approved"
     BINDING_REJECTED = "binding_rejected"
+    BDZ_PUBLISHED = "bdz_published"
+    REVIEW_PUBLISHED = "review_published"
+    REVIEW_MANUAL = "review_manual"
+    REVIEW_FINAL = "review_final"
+    APPEAL_FILED = "appeal_filed"
