@@ -219,6 +219,7 @@ class Ledger:
         excused: bool,
         comment: str | None,
         graded_by: int | None,
+        agent: str | None = None,
     ) -> GradeEntry:
         """Give a student points for an item, replacing what they had.
 
@@ -228,7 +229,9 @@ class Ledger:
             points: Decimal - From 0 to the item's maximum; 0 when excused.
             excused: bool - The item does not count for this student.
             comment: str | None - The teacher's note.
-            graded_by: int | None - Teacher's Telegram id; none for the system.
+            graded_by: int | None - Teacher's Telegram id; none for the system or an
+                agent.
+            agent: str | None - The model's name when an agent graded it.
 
         Returns:
             GradeEntry - The entry.
@@ -236,8 +239,12 @@ class Ledger:
         Raises:
             ItemNotFoundError: If there is no such item.
             PointsOutOfRangeError: If the points are outside the item's range.
+            ValueError: If both a teacher and an agent are given.
 
         """
+        if agent is not None and graded_by is not None:
+            msg = "an agent entry has no teacher"
+            raise ValueError(msg)
         item = await self._items.get(item_id)
         if item is None:
             raise ItemNotFoundError
@@ -261,7 +268,11 @@ class Ledger:
             await self._entries.add(entry)
         else:
             await self._entries.update(entry)
-        await self._record(graded_by, "grade.set", entry.entry_id, before, entry)
+        if agent is not None:
+            kind, actor_id = ActorKind.AGENT, agent
+        else:
+            kind, actor_id = _actor(graded_by)
+        await self._record(kind, actor_id, "grade.set", entry.entry_id, before, entry)
         return entry
 
     async def clear_entry(
@@ -283,7 +294,15 @@ class Ledger:
         if before is None:
             return
         await self._entries.delete(before.entry_id)
-        await self._record(graded_by, "grade.cleared", before.entry_id, before, None)
+        kind, actor_id = _actor(graded_by)
+        await self._record(
+            kind,
+            actor_id,
+            "grade.cleared",
+            before.entry_id,
+            before,
+            None,
+        )
 
     async def add_entry(
         self,
@@ -332,7 +351,8 @@ class Ledger:
             graded_at=self._clock.now(),
         )
         await self._entries.add(entry)
-        await self._record(graded_by, "grade.added", entry.entry_id, None, entry)
+        kind, actor_id = _actor(graded_by)
+        await self._record(kind, actor_id, "grade.added", entry.entry_id, None, entry)
         return entry
 
     async def edit_entry(
@@ -374,7 +394,8 @@ class Ledger:
             graded_at=self._clock.now(),
         )
         await self._entries.update(entry)
-        await self._record(graded_by, "grade.edited", entry_id, before, entry)
+        kind, actor_id = _actor(graded_by)
+        await self._record(kind, actor_id, "grade.edited", entry_id, before, entry)
         return entry
 
     async def delete_entry(self, entry_id: uuid.UUID, *, graded_by: int | None) -> None:
@@ -392,7 +413,8 @@ class Ledger:
         if before is None:
             raise EntryNotFoundError
         await self._entries.delete(entry_id)
-        await self._record(graded_by, "grade.deleted", entry_id, before, None)
+        kind, actor_id = _actor(graded_by)
+        await self._record(kind, actor_id, "grade.deleted", entry_id, before, None)
 
     async def scores(self, group_id: uuid.UUID) -> dict[uuid.UUID, StudentScore]:
         """Score every student of a group's roster.
@@ -467,7 +489,8 @@ class Ledger:
 
     async def _record(
         self,
-        graded_by: int | None,
+        actor_kind: ActorKind,
+        actor_id: str | None,
         action: str,
         entry_id: uuid.UUID,
         before: GradeEntry | None,
@@ -475,8 +498,8 @@ class Ledger:
     ) -> None:
         await self._audit.record(
             AuditEntry(
-                actor_kind=ActorKind.SYSTEM if graded_by is None else ActorKind.ADMIN,
-                actor_id=None if graded_by is None else str(graded_by),
+                actor_kind=actor_kind,
+                actor_id=actor_id,
                 action=action,
                 entity="grade_entry",
                 entity_id=str(entry_id),
@@ -484,6 +507,21 @@ class Ledger:
                 after=_entry_fields(after),
             ),
         )
+
+
+def _actor(graded_by: int | None) -> tuple[ActorKind, str | None]:
+    """Name who graded, when it was a teacher or the system.
+
+    Args:
+        graded_by: int | None - Teacher's Telegram id; none for the system.
+
+    Returns:
+        tuple[ActorKind, str | None] - The audit actor.
+
+    """
+    if graded_by is None:
+        return ActorKind.SYSTEM, None
+    return ActorKind.ADMIN, str(graded_by)
 
 
 def _positive(max_points: Decimal) -> None:

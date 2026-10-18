@@ -130,6 +130,7 @@ class GradebookApi(Protocol):
         excused: bool,
         comment: str | None,
         graded_by: int | None,
+        agent: str | None = None,
     ) -> GradeEntry:
         """Give a student points for an item, replacing what they had.
 
@@ -139,10 +140,15 @@ class GradebookApi(Protocol):
             points: Decimal - From 0 to the item's maximum; 0 when excused.
             excused: bool - The item does not count for this student.
             comment: str | None - The teacher's note.
-            graded_by: int | None - Teacher's Telegram id; none for the system.
+            graded_by: int | None - Teacher's Telegram id; none for the system or an
+                agent.
+            agent: str | None - The model's name when an agent graded it.
 
         Returns:
             GradeEntry - The entry.
+
+        Raises:
+            ValueError: If both a teacher and an agent are given.
 
         """
         ...
