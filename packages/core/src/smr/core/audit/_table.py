@@ -31,7 +31,12 @@ AUDIT_LOG_TABLE = Table(
         server_default=func.now(),
         comment="When it happened",
     ),
-    Column("actor_kind", Text, nullable=False, comment="admin, student or system"),
+    Column(
+        "actor_kind",
+        Text,
+        nullable=False,
+        comment="admin, student, system or agent",
+    ),
     Column("actor_id", Text, nullable=True, comment="Telegram id or roster id"),
     Column("action", Text, nullable=False, comment="What happened"),
     Column("entity", Text, nullable=False, comment="Kind of the changed thing"),

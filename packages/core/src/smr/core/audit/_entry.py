@@ -16,6 +16,7 @@ class ActorKind(StrEnum):
     ADMIN = "admin"
     STUDENT = "student"
     SYSTEM = "system"
+    AGENT = "agent"
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,8 +28,8 @@ class AuditEntry:
 
     Attributes:
         actor_kind: ActorKind - Who acted.
-        actor_id: str | None - Teacher's Telegram id or student's roster id; none for
-            the system.
+        actor_id: str | None - Teacher's Telegram id, student's roster id, or the
+            agent's model name; none for the system.
         action: str - What happened, a label its domain defines.
         entity: str - Kind of the changed thing, e.g. `"grade_entry"`.
         entity_id: str - Its id.

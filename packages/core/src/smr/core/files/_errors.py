@@ -13,3 +13,11 @@ class UnsupportedFileError(FilesError):
 
 class FileTooLargeError(FilesError):
     """The file is larger than the store accepts."""
+
+
+class PdfLockedError(FilesError):
+    """The PDF asks for a password."""
+
+
+class PdfBrokenError(FilesError):
+    """The PDF does not open, or it has no pages."""
