@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 
 from smr.bdz.domain import NotAPdfError, TooManyPagesError
@@ -45,7 +46,8 @@ async def store_pdf(
     except UnsupportedFileError as error:
         raise NotAPdfError from error
     try:
-        pages = count_pages(data)
+        # pdfium parses up to 20 MB here; keep it off the bot's event loop.
+        pages = await asyncio.to_thread(count_pages, data)
     except (PdfLockedError, PdfBrokenError):
         await files.delete(saved.relative_path)
         raise

@@ -26,7 +26,7 @@ from smr.core.access import AdminGuard
 from smr.core.audit import ActorKind, AuditEntry, AuditLog
 from smr.core.clock import Clock
 from smr.core.database import UnitOfWork
-from smr.core.files import FileStore
+from smr.core.files import FileStore, StoredFile
 from smr.gradebook.application.contracts import GradebookApi
 from smr.gradebook.domain import ScoringMode, WorkTypeNotFoundError
 from smr.notifications.application.contracts import NotificationsApi
@@ -85,6 +85,28 @@ class RosterLine:
     status: VerdictStatus | None
 
 
+@dataclass(frozen=True, slots=True)
+class _Pdfs:
+    """The two stored PDFs of a new БДЗ.
+
+    Attributes:
+        statement: StoredFile - The statement on disk.
+        statement_pages: int - Its pages.
+        statement_tg_file_id: str - Telegram's id, to send it again.
+        solutions: StoredFile - The solutions on disk.
+        solutions_pages: int - Their pages.
+        solutions_tg_file_id: str - Telegram's id.
+
+    """
+
+    statement: StoredFile
+    statement_pages: int
+    statement_tg_file_id: str
+    solutions: StoredFile
+    solutions_pages: int
+    solutions_tg_file_id: str
+
+
 @final
 class CreateBdz:
     """Publish a БДЗ: files, scheme, a ledger item and a notice."""
@@ -134,9 +156,10 @@ class CreateBdz:
             Bdz - The published assignment.
 
         Raises:
-            WorkTypeNotFoundError: If the work type is not of this group.
-            WorkTypeNotProportionalError: If the work type accumulates.
             InvalidSchemeError: If the title or the scheme is empty.
+
+        A work type of another group or one that accumulates is refused by
+        `_record`; the stored files are deleted on any failure.
 
         """
         self._guard.require(actor)
@@ -146,6 +169,85 @@ class CreateBdz:
         numbers = [task.number for task in draft.tasks]
         if numbers != list(range(1, len(numbers) + 1)):
             raise InvalidSchemeError
+        now = self._clock.now()
+        pdfs = await self._store(statement, solutions, now)
+        try:
+            return await self._record(actor, group_id, draft, title, pdfs, now)
+        except BaseException:
+            # A stored file without a row would be lost on disk.
+            await self._files.delete(pdfs.statement.relative_path)
+            await self._files.delete(pdfs.solutions.relative_path)
+            raise
+
+    async def _store(
+        self,
+        statement: Upload,
+        solutions: Upload,
+        now: datetime,
+    ) -> _Pdfs:
+        """Store both PDFs; when the second is refused, the first goes too.
+
+        Args:
+            statement: Upload - The statement PDF.
+            solutions: Upload - The solutions PDF.
+            now: datetime - Names the month folder.
+
+        Returns:
+            _Pdfs - Both files and their page counts.
+
+        """
+        first, first_pages = await store_pdf(
+            self._files,
+            statement.data,
+            now,
+            self._max_pages,
+        )
+        try:
+            second, second_pages = await store_pdf(
+                self._files,
+                solutions.data,
+                now,
+                self._max_pages,
+            )
+        except BaseException:
+            await self._files.delete(first.relative_path)
+            raise
+        return _Pdfs(
+            first,
+            first_pages,
+            statement.tg_file_id,
+            second,
+            second_pages,
+            solutions.tg_file_id,
+        )
+
+    async def _record(
+        self,
+        actor: int,
+        group_id: uuid.UUID,
+        draft: BdzDraft,
+        title: str,
+        pdfs: _Pdfs,
+        now: datetime,
+    ) -> Bdz:
+        """Write the assignment, its ledger item and the notice.
+
+        Args:
+            actor: int - Teacher's Telegram id.
+            group_id: uuid.UUID - The group.
+            draft: BdzDraft - The deadline, the work type and the scheme.
+            title: str - The cleaned title.
+            pdfs: _Pdfs - The stored files.
+            now: datetime - When.
+
+        Returns:
+            Bdz - The published assignment.
+
+        Raises:
+            WorkTypeNotFoundError: If the work type is not of this group.
+            WorkTypeNotProportionalError: If the work type accumulates.
+
+        """
         maximum = sum((task.max_points for task in draft.tasks), Decimal(0))
         async with self._uow:
             group = await _open(self._roster, group_id)
@@ -154,19 +256,6 @@ class CreateBdz:
                 raise WorkTypeNotFoundError
             if work_type.mode is not ScoringMode.PROPORTIONAL:
                 raise WorkTypeNotProportionalError
-            now = self._clock.now()
-            statement_file, statement_pages = await store_pdf(
-                self._files,
-                statement.data,
-                now,
-                self._max_pages,
-            )
-            solutions_file, solutions_pages = await store_pdf(
-                self._files,
-                solutions.data,
-                now,
-                self._max_pages,
-            )
             item = await self._gradebook.create_item(
                 draft.work_type_id,
                 title,
@@ -181,12 +270,12 @@ class CreateBdz:
                 title=title,
                 deadline=draft.deadline,
                 max_points=maximum,
-                statement_path=statement_file.relative_path,
-                statement_tg_file_id=statement.tg_file_id,
-                statement_pages=statement_pages,
-                solutions_path=solutions_file.relative_path,
-                solutions_tg_file_id=solutions.tg_file_id,
-                solutions_pages=solutions_pages,
+                statement_path=pdfs.statement.relative_path,
+                statement_tg_file_id=pdfs.statement_tg_file_id,
+                statement_pages=pdfs.statement_pages,
+                solutions_path=pdfs.solutions.relative_path,
+                solutions_tg_file_id=pdfs.solutions_tg_file_id,
+                solutions_pages=pdfs.solutions_pages,
                 created_at=now,
             )
             await self._assignments.add(bdz, draft.tasks)

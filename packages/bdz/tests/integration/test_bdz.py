@@ -29,6 +29,7 @@ from smr.review.infrastructure.models import VerdictModel
 
 if TYPE_CHECKING:
     import uuid
+    from pathlib import Path
 
     from bdz_kit import BdzBox
     from gradebook_kit import Gradebook
@@ -437,3 +438,53 @@ async def test_export_zip_holds_the_live_pdf(
         text = archive.read(note).decode()
     assert any(name.endswith("работа.pdf") for name in names)
     assert "Проверки пока нет." in text
+
+
+def _pdfs_on_disk(data_dir: Path) -> list[Path]:
+    return sorted((data_dir / "files").rglob("*.pdf"))
+
+
+async def test_failed_create_leaves_no_file(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+    tmp_path: Path,
+) -> None:
+    """A locked solutions PDF takes the already stored statement with it."""
+    group, _, work_type = await _ready(roster, gradebook)
+    now = roster.clock.now()
+    with pytest.raises(PdfLockedError):
+        _ = await bdz.create(
+            TEACHER,
+            group.group_id,
+            _draft(now, work_type.work_type_id),
+            _upload(_pdf(1), now, "statement"),
+            _upload(_pdf(1, password="secret"), now, "solutions"),
+        )
+    assert _pdfs_on_disk(tmp_path) == []
+
+
+async def test_failed_send_leaves_no_file(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Any failure after the PDF is stored deletes it, not only refusals."""
+    group, _, work_type = await _ready(roster, gradebook)
+    created = await _publish(bdz, roster, group, work_type.work_type_id)
+    before = _pdfs_on_disk(tmp_path)
+
+    async def broken(*_: object) -> None:
+        msg = "database went away"
+        raise RuntimeError(msg)
+
+    monkeypatch.setattr(bdz.send._submissions, "add", broken)
+    with pytest.raises(RuntimeError, match="went away"):
+        _ = await bdz.send(
+            STUDENT,
+            created.bdz_id,
+            _upload(_pdf(2), roster.clock.now(), "work"),
+        )
+    assert _pdfs_on_disk(tmp_path) == before

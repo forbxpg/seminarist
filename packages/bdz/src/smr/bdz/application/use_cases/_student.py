@@ -10,7 +10,6 @@ from typing import final
 
 from smr.bdz.domain import (
     Bdz,
-    BdzError,
     BdzNotFoundError,
     BdzSubmission,
     ConsentRequiredError,
@@ -82,11 +81,8 @@ class SendBdz:
         Returns:
             BdzSubmission - The live version.
 
-        Raises:
-            BdzError: If the БДЗ refuses the upload.
-            AppealOpenError: If an appeal is open on the live version.
-            GroupNotFoundError: If the group is gone.
-            GroupArchivedError: If the group is archived.
+        Every refusal of `_record` (БДЗ, appeal or group errors) propagates; the
+        stored file is deleted on any failure.
 
         """
         saved, pages = await store_pdf(
@@ -103,7 +99,8 @@ class SendBdz:
                 saved,
                 pages,
             )
-        except (BdzError, AppealOpenError, GroupNotFoundError, GroupArchivedError):
+        except BaseException:
+            # Any failure, not only a refusal: a stored file without a row is lost.
             await self._files.delete(saved.relative_path)
             raise
         if previous is not None:
