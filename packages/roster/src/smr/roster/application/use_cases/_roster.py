@@ -15,6 +15,7 @@ from smr.roster.domain import (
     DuplicateNameError,
     GroupArchivedError,
     GroupNotFoundError,
+    JournalNumberTakenError,
     Student,
     StudentNotFoundError,
     normalize_name,
@@ -23,6 +24,8 @@ from smr.roster.domain import (
 
 from ._audit import by_admin
 from ._results import ImportResult
+
+MAX_JOURNAL_NO = 999
 
 
 @final
@@ -157,6 +160,62 @@ class RenameStudent:
             await self._students.rename(student_id, name)
             await self._audit.record(
                 by_admin(actor, "student.renamed", "student", student_id),
+            )
+            await self._uow.commit()
+
+
+@final
+class SetJournalNumber:
+    """Give a student their number in the group's journal, or take it away."""
+
+    def __init__(
+        self,
+        students: StudentRepository,
+        uow: UnitOfWork,
+        audit: AuditLog,
+        guard: AdminGuard,
+    ) -> None:
+        self._students: StudentRepository = students
+        self._uow: UnitOfWork = uow
+        self._audit: AuditLog = audit
+        self._guard: AdminGuard = guard
+
+    async def __call__(
+        self,
+        actor: int,
+        student_id: uuid.UUID,
+        number: int | None,
+    ) -> None:
+        """Set it.
+
+        Args:
+            actor: int - Teacher's Telegram id.
+            student_id: uuid.UUID - The row.
+            number: int | None - 1..999, or None to clear it.
+
+        Raises:
+            ValueError: If the number is outside 1..999.
+            StudentNotFoundError: If there is no such row.
+            JournalNumberTakenError: If another student of the group has it.
+
+        """
+        self._guard.require(actor)
+        if number is not None and not 1 <= number <= MAX_JOURNAL_NO:
+            msg = f"a journal number is 1 to {MAX_JOURNAL_NO}"
+            raise ValueError(msg)
+        async with self._uow:
+            student = await self._students.get(student_id)
+            if student is None:
+                raise StudentNotFoundError
+            roster = await self._students.of_group(student.group_id)
+            if number is not None and any(
+                other.journal_no == number and other.student_id != student_id
+                for other in roster
+            ):
+                raise JournalNumberTakenError
+            await self._students.set_journal_no(student_id, number)
+            await self._audit.record(
+                by_admin(actor, "student.journal_no", "student", student_id),
             )
             await self._uow.commit()
 

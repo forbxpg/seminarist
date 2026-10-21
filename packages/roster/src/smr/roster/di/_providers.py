@@ -28,6 +28,7 @@ from smr.roster.application.use_cases import (
     RenameStudent,
     ResolveInvite,
     RotateInvite,
+    SetJournalNumber,
     Unbind,
     UpdateGroupSettings,
 )
@@ -66,6 +67,7 @@ class RosterProvider(Provider):
         RejectBinding,
         RemoveStudent,
         RenameStudent,
+        SetJournalNumber,
         ResolveInvite,
         RotateInvite,
         Unbind,

@@ -17,6 +17,7 @@ class PendingWorkOut(BaseModel):
     pages: int
     sha256: str
     is_late: bool
+    journal_no: int | None
 
 
 class PendingWorksOut(BaseModel):

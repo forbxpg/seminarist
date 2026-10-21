@@ -29,6 +29,8 @@ class Student:
         binding_requested_at: datetime | None - When it was claimed.
         consent_version: str | None - The privacy notice the student accepted.
         consent_at: datetime | None - When.
+        journal_no: int | None - The number in the group's journal; variants of
+            personal tasks are computed from it.
 
     """
 
@@ -40,3 +42,4 @@ class Student:
     binding_requested_at: datetime | None
     consent_version: str | None
     consent_at: datetime | None
+    journal_no: int | None = None

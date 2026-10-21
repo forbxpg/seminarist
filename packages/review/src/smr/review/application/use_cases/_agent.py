@@ -51,6 +51,7 @@ class PendingWork:
         pages: int - How many pages.
         sha256: str - The file.
         is_late: bool - Sent after the deadline.
+        journal_no: int | None - The student's journal number, for the variant.
 
     """
 
@@ -61,6 +62,7 @@ class PendingWork:
     pages: int
     sha256: str
     is_late: bool
+    journal_no: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,6 +163,7 @@ class PendingWorks:
                             pages=work.pages,
                             sha256=work.sha256,
                             is_late=work.is_late,
+                            journal_no=work.journal_no,
                         ),
                     ),
                 )

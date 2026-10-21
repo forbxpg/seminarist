@@ -35,5 +35,9 @@ class DuplicateNameError(RosterError):
     """The group already has a student with this name."""
 
 
+class JournalNumberTakenError(RosterError):
+    """Another student of the group already has this journal number."""
+
+
 class NotPendingError(RosterError):
     """The row is not waiting for the teacher's decision."""

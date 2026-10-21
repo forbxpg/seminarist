@@ -328,3 +328,16 @@ async def test_manipulation_is_audited(
     assert outcome.total == Decimal(0)
     actions = await session.scalars(select(AUDIT_LOG_TABLE.c.action))
     assert "review.manipulation" in set(actions)
+
+
+async def test_pending_work_carries_the_journal_number(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> None:
+    """The agent gets the student's journal number, never the name."""
+    _, sent = await _handed_in(bdz, roster, gradebook)
+    await roster.journal(TEACHER, sent.student_id, 17)
+    pending = await bdz.pending()
+    assert [work.journal_no for work in pending] == [17]
+    assert "Иванов" not in repr(pending)

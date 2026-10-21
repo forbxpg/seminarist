@@ -26,6 +26,8 @@ class WorkRef:
         sent_at: datetime - When the student sent it.
         is_late: bool - Sent after the deadline.
         title: str - The assignment's title.
+        journal_no: int | None - The student's number in the group's journal, which
+            picks their variant; None when the teacher has not set it.
 
     """
 
@@ -38,6 +40,7 @@ class WorkRef:
     sent_at: datetime
     is_late: bool
     title: str
+    journal_no: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

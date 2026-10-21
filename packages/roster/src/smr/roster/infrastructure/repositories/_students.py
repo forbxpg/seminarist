@@ -201,6 +201,18 @@ class SqlAlchemyStudents:
             update(_Row).where(_Row.id == student_id).values(full_name=full_name),
         )
 
+    async def set_journal_no(self, student_id: uuid.UUID, number: int | None) -> None:
+        """Set or clear a row's journal number.
+
+        Args:
+            student_id: uuid.UUID - The row.
+            number: int | None - The number, or None to clear it.
+
+        """
+        _ = await self._session.execute(
+            update(_Row).where(_Row.id == student_id).values(journal_no=number),
+        )
+
     async def delete(self, student_id: uuid.UUID) -> None:
         """Delete a row.
 
@@ -230,4 +242,5 @@ def to_student(row: StudentModel) -> Student:
         binding_requested_at=row.binding_requested_at,
         consent_version=row.consent_version,
         consent_at=row.consent_at,
+        journal_no=row.journal_no,
     )

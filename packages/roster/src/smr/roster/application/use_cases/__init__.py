@@ -24,7 +24,13 @@ from ._groups import (
     UpdateGroupSettings,
 )
 from ._results import ImportResult, Membership
-from ._roster import ImportRoster, ListStudents, RemoveStudent, RenameStudent
+from ._roster import (
+    ImportRoster,
+    ListStudents,
+    RemoveStudent,
+    RenameStudent,
+    SetJournalNumber,
+)
 
 __all__ = (
     "AcceptConsent",
@@ -48,6 +54,7 @@ __all__ = (
     "RenameStudent",
     "ResolveInvite",
     "RotateInvite",
+    "SetJournalNumber",
     "Unbind",
     "UpdateGroupSettings",
 )

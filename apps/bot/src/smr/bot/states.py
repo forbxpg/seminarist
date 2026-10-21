@@ -51,6 +51,7 @@ class AdminSG(StatesGroup):
     roster = State()
     roster_paste = State()
     student = State()
+    journal_no = State()
     invite = State()
     settings = State()
     setting_value = State()

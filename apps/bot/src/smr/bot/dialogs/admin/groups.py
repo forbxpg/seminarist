@@ -55,10 +55,11 @@ from smr.roster.application.use_cases import (
     RejectBinding,
     RemoveStudent,
     RotateInvite,
+    SetJournalNumber,
     Unbind,
     UpdateGroupSettings,
 )
-from smr.roster.domain import BindingStatus, NotPendingError
+from smr.roster.domain import BindingStatus, NotPendingError, Student
 
 _MIDDLEWARE = Any
 _MARK = {
@@ -224,10 +225,37 @@ async def _roster_getter(
     rows = await students(actor(dialog_manager), _group(dialog_manager))
     return {
         "students": [
-            (f"{_MARK[s.binding]} {s.full_name}", str(s.student_id)) for s in rows
+            (f"{_MARK[s.binding]} {_numbered(s)}", str(s.student_id)) for s in rows
         ],
         "empty": not rows,
     }
+
+
+def _numbered(student: Student) -> str:
+    if student.journal_no is None:
+        return student.full_name
+    return f"{student.journal_no}. {student.full_name}"
+
+
+@inject
+async def _set_journal_no(
+    message: Message,
+    _widget: ManagedTextInput[str],
+    manager: DialogManager,
+    value: str,
+    journal: FromDishka[SetJournalNumber],
+) -> None:
+    if message.from_user is None:
+        return
+    text = value.strip()
+    if text != "-" and not text.isdigit():
+        _ = await message.answer(
+            "Номер в журнале — число от 1 до 999, или «-», чтобы убрать.",
+        )
+        return
+    number = None if text == "-" else int(text)
+    await journal(message.from_user.id, remembered_id(manager, "student_id"), number)
+    await manager.switch_to(AdminSG.student)
 
 
 @inject
@@ -269,9 +297,10 @@ async def _student_getter(
         BindingStatus.PENDING: "ждёт подтверждения",
         BindingStatus.UNBOUND: "не привязан",
     }[student.binding]
+    number = "не задан" if student.journal_no is None else str(student.journal_no)
     return {
         "name": safe(student.full_name),
-        "status": status,
+        "status": f"{status}\nНомер в журнале: {number}",
         "bound": student.binding is not BindingStatus.UNBOUND,
     }
 
@@ -636,10 +665,17 @@ groups_dialog = Dialog(
             on_click=_unbind,
             when="bound",
         ),
+        SwitchTo(Const("🔢 Номер в журнале"), id="journal", state=AdminSG.journal_no),
         Button(Const("🗑 Удалить из списка"), id="remove", on_click=_remove),
         SwitchTo(Const("« Список"), id="back", state=AdminSG.roster),
         getter=_student_getter,
         state=AdminSG.student,
+    ),
+    Window(
+        Const("Номер в журнале (1–999). «-» — убрать номер."),
+        TextInput(id="journal_no", on_success=_set_journal_no),
+        SwitchTo(Const("Отмена"), id="cancel", state=AdminSG.student),
+        state=AdminSG.journal_no,
     ),
     Window(
         Format("Ссылка для группы (отправьте студентам):\n{link}"),

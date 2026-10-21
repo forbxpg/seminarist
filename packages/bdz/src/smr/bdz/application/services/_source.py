@@ -175,6 +175,7 @@ class BdzReviewSource:
         group = await self._roster.group(bdz.group_id)
         if group is None or not group.is_active:
             return None
+        student = await self._roster.student(submission.student_id)
         return WorkRef(
             work_id=submission.submission_id,
             task_ref=bdz.bdz_id,
@@ -185,4 +186,5 @@ class BdzReviewSource:
             sent_at=submission.sent_at,
             is_late=submission.is_late,
             title=bdz.title,
+            journal_no=None if student is None else student.journal_no,
         )

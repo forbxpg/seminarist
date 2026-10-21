@@ -142,6 +142,7 @@ async def _pending(request: AsyncContainer) -> PendingWorksOut:
                 pages=work.pages,
                 sha256=work.sha256,
                 is_late=work.is_late,
+                journal_no=work.journal_no,
             )
             for work in found
         ],

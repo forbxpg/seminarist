@@ -27,6 +27,7 @@ from smr.roster.application.use_cases import (
     RejectBinding,
     RemoveStudent,
     RotateInvite,
+    SetJournalNumber,
     Unbind,
     UpdateGroupSettings,
 )
@@ -64,6 +65,7 @@ class Roster:
         self.due = GroupsDueForPurge(groups, self.clock)
         self.purge = PurgeGroup(groups, uow, audit)
         self.import_ = ImportRoster(groups, students, uow, audit, guard)
+        self.journal = SetJournalNumber(students, uow, audit, guard)
         self.claimable = ClaimableNames(groups, students)
         self.claim = ClaimStudent(groups, students, uow, audit, self.clock)
         self.pending = PendingBindings(groups, students, guard)

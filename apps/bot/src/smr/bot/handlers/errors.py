@@ -101,6 +101,7 @@ _REASONS: dict[str, str] = {
     "NameTakenError": "фамилию уже выбрали",
     "AlreadyBoundError": "вы уже в этой группе",
     "DuplicateNameError": "такое ФИО уже есть в группе",
+    "JournalNumberTakenError": "этот номер в журнале уже у другого студента",
     "NotPendingError": "заявка уже обработана",
     "WorkTypeNotFoundError": "в группе нет такого вида работы — примените схему баллов",
     "WorkTypeInUseError": "по этому виду работы уже есть баллы",

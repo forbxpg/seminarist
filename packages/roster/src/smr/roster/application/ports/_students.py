@@ -137,6 +137,16 @@ class StudentRepository(Protocol):
         """
         ...
 
+    async def set_journal_no(self, student_id: uuid.UUID, number: int | None) -> None:
+        """Set or clear a row's journal number.
+
+        Args:
+            student_id: uuid.UUID - The row.
+            number: int | None - The number, or None to clear it.
+
+        """
+        ...
+
     async def delete(self, student_id: uuid.UUID) -> None:
         """Delete a row.
 
