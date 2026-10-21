@@ -54,8 +54,9 @@ class TaskSheet:
         max_points: Decimal - The sum.
         statement_path: str - The statement, a FileStore path.
         statement_pages: int - How many pages it has.
-        solutions_path: str - The solutions, never sent to students.
-        solutions_pages: int - How many pages they have.
+        solutions_path: str | None - The solutions, never sent to students; None
+            when the agent solves the tasks itself.
+        solutions_pages: int | None - How many pages they have.
 
     """
 
@@ -65,8 +66,8 @@ class TaskSheet:
     max_points: Decimal
     statement_path: str
     statement_pages: int
-    solutions_path: str
-    solutions_pages: int
+    solutions_path: str | None
+    solutions_pages: int | None
 
 
 class ReviewSource(Protocol):

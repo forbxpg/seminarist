@@ -81,7 +81,11 @@ class DeleteGroupBdzFiles:
         async with self._uow:
             assignments = await self._assignments.of_group(group_id)
             paths = [item.statement_path for item in assignments]
-            paths.extend(item.solutions_path for item in assignments)
+            paths.extend(
+                item.solutions_path
+                for item in assignments
+                if item.solutions_path is not None
+            )
             ids: list[uuid.UUID] = []
             for item in assignments:
                 versions = await self._submissions.of_bdz(item.bdz_id)

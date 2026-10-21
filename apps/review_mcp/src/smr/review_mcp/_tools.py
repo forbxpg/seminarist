@@ -159,6 +159,12 @@ async def _sheet(
     sheet = await (await request.get(TaskSheetFor))(task_key)
     if part == "statement":
         relative, total = sheet.statement_path, sheet.statement_pages
+    elif sheet.solutions_path is None or sheet.solutions_pages is None:
+        msg = (
+            "no reference solutions: solve every task of the student's variant "
+            "yourself before grading"
+        )
+        raise ToolError(msg)
     else:
         relative, total = sheet.solutions_path, sheet.solutions_pages
     scheme = [
@@ -169,7 +175,7 @@ async def _sheet(
         f"{sheet.title}\n"
         f"scheme: {json.dumps(scheme, ensure_ascii=False)}\n"
         f"statement_pages: {sheet.statement_pages}\n"
-        f"solutions_pages: {sheet.solutions_pages}"
+        f"{_solutions_line(sheet.solutions_pages)}"
     )
     files = await request.get(FileStore)
     return await _images(files, relative, total, start, count, heading)
@@ -242,3 +248,9 @@ def _money(value: Decimal) -> str:
     if "." not in text:
         return text
     return text.rstrip("0").rstrip(".")
+
+
+def _solutions_line(pages: int | None) -> str:
+    if pages is None:
+        return "solutions: none, solve the tasks yourself"
+    return f"solutions_pages: {pages}"

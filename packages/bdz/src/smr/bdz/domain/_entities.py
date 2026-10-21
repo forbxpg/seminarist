@@ -45,9 +45,10 @@ class Bdz:
         statement_path: str - The statement PDF.
         statement_tg_file_id: str - Telegram's id for the statement.
         statement_pages: int - How many pages it has.
-        solutions_path: str - The solutions PDF.
-        solutions_tg_file_id: str - Telegram's id for the solutions.
-        solutions_pages: int - How many pages they have.
+        solutions_path: str | None - The solutions PDF; None when the agent solves
+            the tasks itself.
+        solutions_tg_file_id: str | None - Telegram's id for the solutions.
+        solutions_pages: int | None - How many pages they have.
         created_at: datetime - When it was published.
 
     """
@@ -62,9 +63,9 @@ class Bdz:
     statement_path: str
     statement_tg_file_id: str
     statement_pages: int
-    solutions_path: str
-    solutions_tg_file_id: str
-    solutions_pages: int
+    solutions_path: str | None
+    solutions_tg_file_id: str | None
+    solutions_pages: int | None
     created_at: datetime
 
 

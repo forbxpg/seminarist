@@ -99,7 +99,11 @@ def _pdf() -> bytes:
     return buffer.getvalue()
 
 
-async def _work(container: AsyncContainer) -> tuple[str, str, str]:
+async def _work(
+    container: AsyncContainer,
+    *,
+    with_solutions: bool = True,
+) -> tuple[str, str, str]:
     """Publish a БДЗ and send one PDF.
 
     Returns:
@@ -139,7 +143,7 @@ async def _work(container: AsyncContainer) -> tuple[str, str, str]:
                 (SchemeTask(1, Decimal(10)),),
             ),
             Upload(pdf, "tg-s", "uniq-s", now),
-            Upload(pdf, "tg-a", "uniq-a", now),
+            Upload(pdf, "tg-a", "uniq-a", now) if with_solutions else None,
         )
         sent = await (await request.get(SendBdz))(
             _STUDENT,
@@ -267,3 +271,31 @@ async def test_missing_file_is_refused_with_reason(
     assert refused.is_error
     text = " ".join(block.text for block in refused.content if block.type == "text")
     assert "file is gone" in text
+
+
+async def test_no_solutions_tells_the_agent_to_solve(
+    database_url: str,
+    tmp_path: Path,
+) -> None:
+    """Without a reference, asking for it says to solve the tasks first."""
+    container = make_container(_Settings(database_url, tmp_path))
+    _, task_key, _ = await _work(container, with_solutions=False)
+    try:
+        async with Client(build_server(container)) as client:
+            refused = await client.call_tool(
+                "get_task_sheet",
+                {"task_key": task_key, "part": "solutions"},
+            )
+            statement = await client.call_tool(
+                "get_task_sheet",
+                {"task_key": task_key, "part": "statement"},
+            )
+    finally:
+        await _forget(container, task_key)
+        await container.close()
+    assert refused.is_error
+    text = " ".join(block.text for block in refused.content if block.type == "text")
+    assert "no reference solutions" in text
+    heading = statement.content[0]
+    assert heading.type == "text"
+    assert "solutions: none" in heading.text

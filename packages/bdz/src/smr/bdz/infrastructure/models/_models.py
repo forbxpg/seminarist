@@ -39,6 +39,14 @@ class AssignmentModel(BdzBase):
         CheckConstraint("max_points > 0", name="max_points_positive"),
         CheckConstraint("statement_pages >= 1", name="statement_pages_positive"),
         CheckConstraint("solutions_pages >= 1", name="solutions_pages_positive"),
+        CheckConstraint(
+            "(solutions_path IS NULL) = (solutions_tg_file_id IS NULL)",
+            name="solutions_file_id_with_path",
+        ),
+        CheckConstraint(
+            "(solutions_path IS NULL) = (solutions_pages IS NULL)",
+            name="solutions_pages_with_path",
+        ),
     )
 
     bdz_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
@@ -60,9 +68,9 @@ class AssignmentModel(BdzBase):
     statement_path: Mapped[str] = mapped_column(Text)
     statement_tg_file_id: Mapped[str] = mapped_column(Text)
     statement_pages: Mapped[int] = mapped_column(Integer)
-    solutions_path: Mapped[str] = mapped_column(Text)
-    solutions_tg_file_id: Mapped[str] = mapped_column(Text)
-    solutions_pages: Mapped[int] = mapped_column(Integer)
+    solutions_path: Mapped[str | None] = mapped_column(Text)
+    solutions_tg_file_id: Mapped[str | None] = mapped_column(Text)
+    solutions_pages: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 

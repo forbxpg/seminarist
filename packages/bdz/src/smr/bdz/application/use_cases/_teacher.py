@@ -90,18 +90,18 @@ class _Pdfs:
         statement: StoredFile - The statement on disk.
         statement_pages: int - Its pages.
         statement_tg_file_id: str - Telegram's id, to send it again.
-        solutions: StoredFile - The solutions on disk.
-        solutions_pages: int - Their pages.
-        solutions_tg_file_id: str - Telegram's id.
+        solutions: StoredFile | None - The solutions on disk, when given.
+        solutions_pages: int | None - Their pages.
+        solutions_tg_file_id: str | None - Telegram's id.
 
     """
 
     statement: StoredFile
     statement_pages: int
     statement_tg_file_id: str
-    solutions: StoredFile
-    solutions_pages: int
-    solutions_tg_file_id: str
+    solutions: StoredFile | None
+    solutions_pages: int | None
+    solutions_tg_file_id: str | None
 
 
 @final
@@ -138,7 +138,7 @@ class CreateBdz:
         group_id: uuid.UUID,
         draft: BdzDraft,
         statement: Upload,
-        solutions: Upload,
+        solutions: Upload | None,
     ) -> Bdz:
         """Publish it.
 
@@ -147,7 +147,8 @@ class CreateBdz:
             group_id: uuid.UUID - The group.
             draft: BdzDraft - The title, the deadline and the scheme.
             statement: Upload - The statement PDF.
-            solutions: Upload - The solutions PDF.
+            solutions: Upload | None - The solutions PDF; without it the agent solves
+                the tasks itself.
 
         Returns:
             Bdz - The published assignment.
@@ -173,20 +174,21 @@ class CreateBdz:
         except BaseException:
             # A stored file without a row would be lost on disk.
             await self._files.delete(pdfs.statement.relative_path)
-            await self._files.delete(pdfs.solutions.relative_path)
+            if pdfs.solutions is not None:
+                await self._files.delete(pdfs.solutions.relative_path)
             raise
 
     async def _store(
         self,
         statement: Upload,
-        solutions: Upload,
+        solutions: Upload | None,
         now: datetime,
     ) -> _Pdfs:
         """Store both PDFs; when the second is refused, the first goes too.
 
         Args:
             statement: Upload - The statement PDF.
-            solutions: Upload - The solutions PDF.
+            solutions: Upload | None - The solutions PDF, when given.
             now: datetime - Names the month folder.
 
         Returns:
@@ -199,6 +201,8 @@ class CreateBdz:
             now,
             self._max_pages,
         )
+        if solutions is None:
+            return _Pdfs(first, first_pages, statement.tg_file_id, None, None, None)
         try:
             second, second_pages = await store_pdf(
                 self._files,
@@ -270,7 +274,9 @@ class CreateBdz:
                 statement_path=pdfs.statement.relative_path,
                 statement_tg_file_id=pdfs.statement_tg_file_id,
                 statement_pages=pdfs.statement_pages,
-                solutions_path=pdfs.solutions.relative_path,
+                solutions_path=(
+                    None if pdfs.solutions is None else pdfs.solutions.relative_path
+                ),
                 solutions_tg_file_id=pdfs.solutions_tg_file_id,
                 solutions_pages=pdfs.solutions_pages,
                 created_at=now,
@@ -570,6 +576,8 @@ async def _open(roster: RosterApi, group_id: uuid.UUID) -> Group:
 
 
 def _paths(bdz: Bdz, versions: Sequence[BdzSubmission]) -> list[str]:
-    paths = [bdz.statement_path, bdz.solutions_path]
+    paths = [bdz.statement_path]
+    if bdz.solutions_path is not None:
+        paths.append(bdz.solutions_path)
     paths.extend(row.path for row in versions)
     return paths

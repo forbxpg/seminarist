@@ -488,3 +488,25 @@ async def test_failed_send_leaves_no_file(
             _upload(_pdf(2), roster.clock.now(), "work"),
         )
     assert _pdfs_on_disk(tmp_path) == before
+
+
+async def test_create_without_solutions(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> None:
+    """A БДЗ may come without a solutions PDF; the agent then solves it itself."""
+    group, _, work_type = await _ready(roster, gradebook)
+    now = roster.clock.now()
+    created = await bdz.create(
+        TEACHER,
+        group.group_id,
+        _draft(now, work_type.work_type_id),
+        _upload(_pdf(2), now, "statement"),
+        None,
+    )
+    assert created.solutions_path is None
+    sheet = await bdz.source.sheet(created.bdz_id)
+    assert sheet.solutions_path is None
+    assert sheet.solutions_pages is None
+    assert sheet.statement_pages == 2

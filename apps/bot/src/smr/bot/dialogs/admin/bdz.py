@@ -155,6 +155,16 @@ async def _pdf(
     await manager.switch_to(nxt)
 
 
+async def _no_solutions(
+    _callback: CallbackQuery,
+    _button: Button,
+    manager: DialogManager,
+) -> None:
+    _ = manager.dialog_data.pop("solutions_id", None)
+    _ = manager.dialog_data.pop("solutions_unique", None)
+    await manager.switch_to(BdzSG.new_scheme)
+
+
 async def _scheme(
     message: Message,
     _widget: ManagedTextInput[str],
@@ -190,11 +200,17 @@ async def _confirm_getter(
     when = datetime.fromisoformat(raw)
     tasks = parse_scheme(str(dialog_manager.dialog_data["scheme"]))
     total = sum((task.max_points for task in tasks), Decimal(0))
+    solved = (
+        "PDF приложен"
+        if dialog_manager.dialog_data.get("solutions_id")
+        else "нет, агент решит сам"
+    )
     return {
         "text": (
             f"<b>{safe(dialog_manager.dialog_data['title'])}</b>\n"
             f"Сумма: {points(total)}\n"
-            f"Срок: {moment(when)}"
+            f"Срок: {moment(when)}\n"
+            f"Решения: {solved}"
         ),
     }
 
@@ -218,7 +234,14 @@ async def _create(
     data = manager.dialog_data
     deadline = datetime.fromisoformat(str(data["deadline"]))
     statement = await _download(bot, str(data["statement_id"]))
-    solutions = await _download(bot, str(data["solutions_id"]))
+    solutions = None
+    if data.get("solutions_id"):
+        solutions = Upload(
+            await _download(bot, str(data["solutions_id"])),
+            str(data["solutions_id"]),
+            str(data["solutions_unique"]),
+            now,
+        )
     _ = await create(
         actor(manager),
         _group(manager),
@@ -234,12 +257,7 @@ async def _create(
             str(data["statement_unique"]),
             now,
         ),
-        Upload(
-            solutions,
-            str(data["solutions_id"]),
-            str(data["solutions_unique"]),
-            now,
-        ),
+        solutions,
     )
     _ = await callback.answer("БДЗ опубликовано.", show_alert=True)
     await manager.switch_to(BdzSG.list)
@@ -376,8 +394,12 @@ bdz_dialog = Dialog(
         state=BdzSG.new_statement,
     ),
     Window(
-        Const("Пришлите PDF с решениями. Студенты его не увидят."),
+        Const(
+            "Пришлите PDF с решениями — студенты его не увидят. "
+            "Без решений агент сначала решит задачи сам.",
+        ),
         MessageInput(_pdf, content_types=[ContentType.DOCUMENT, ContentType.PHOTO]),
+        Button(Const("Без решений"), id="no_solutions", on_click=_no_solutions),
         SwitchTo(Const("Отмена"), id="cancel", state=BdzSG.list),
         state=BdzSG.new_solutions,
     ),

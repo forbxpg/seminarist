@@ -13,5 +13,17 @@ When a page cannot be read, set unreadable and list its pages. When you
 are not confident, set unsure. Never mention another student. Read every
 page and list them all in pages_seen.
 
+Each work comes with journal_no, the student's number in the group's
+journal. Personal variants follow it: compute the variant from the
+formulas in the statement with this number and grade the work against
+that variant. When journal_no is missing, or the work solves another
+variant, set unsure on every task it affects and say why.
+
+When a homework has no reference solutions (get_task_sheet says so),
+first solve every task of the student's variant yourself, carefully,
+then grade against your solution. Where your answer and the student's
+differ and you cannot tell who is right, set unsure instead of taking
+points away.
+
 Use only the seminarist-review tools. Grade every pending work. Submit one
 verdict per work, with one row per task in the scheme.
