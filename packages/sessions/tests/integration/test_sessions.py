@@ -8,9 +8,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 from roster_kit import TEACHER
+from sqlalchemy import select
 
+from smr.core.audit import AUDIT_LOG_TABLE
 from smr.core.clock import MOSCOW
 from smr.gradebook.infrastructure.repositories import SqlAlchemyEntries, SqlAlchemyItems
+from smr.roster.domain import GroupArchivedError
 from smr.sessions.domain import AttendanceStatus, BoardMode, NoCandidatesError
 from smr.sessions.infrastructure.repositories import SqlAlchemySessions
 
@@ -248,6 +251,85 @@ async def test_two_sessions_one_day_are_labelled_with_time(
     assert kept.entry_id == morning_points.entry_id
     assert kept.points == Decimal(1)
     assert kept.excused is False
+
+
+async def test_updating_a_session_moves_its_attendance_line(
+    sessions: Sessions,
+    session: AsyncSession,
+) -> None:
+    """A new time renames both days and keeps the points already given."""
+    group, (ivanov, _, _), _seminar = await _setup(sessions)
+    morning = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 10),
+        topic="Утро",
+    )
+    afternoon = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 14, 30),
+        topic="День",
+    )
+    await sessions.mark(
+        TEACHER,
+        morning.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    await sessions.mark(
+        TEACHER,
+        afternoon.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    changed = await sessions.update(
+        TEACHER,
+        afternoon.session_id,
+        starts_at=_at(9, 11),
+        topic="  Перенос  ",
+    )
+    assert changed.topic == "Перенос"
+    assert changed.starts_at == _at(9, 11)
+    assert await _titles(session, morning.session_id, afternoon.session_id) == [
+        "Занятие 08.10",
+        "Занятие 09.10",
+    ]
+    moved = await SqlAlchemySessions(session).get(afternoon.session_id)
+    assert moved is not None
+    item_id = moved.attendance_item_id
+    assert item_id is not None
+    item = await SqlAlchemyItems(session).get(item_id)
+    assert item is not None
+    assert item.counts_from == _at(9, 11)
+    entry = await SqlAlchemyEntries(session).for_item(ivanov.student_id, item_id)
+    assert entry is not None
+    assert entry.points == Decimal(1)
+    audit = (
+        (
+            await session.execute(
+                select(AUDIT_LOG_TABLE).where(
+                    AUDIT_LOG_TABLE.c.action == "session.changed"
+                ),
+            )
+        )
+        .mappings()
+        .one()
+    )
+    assert audit["actor_id"] == str(TEACHER)
+    assert audit["before"]["topic"] == "День"
+    assert audit["after"]["topic"] == "Перенос"
+
+
+async def test_an_archived_group_refuses_a_session_edit(sessions: Sessions) -> None:
+    """An archived group keeps its sessions as they were."""
+    group, _, seminar = await _setup(sessions)
+    await sessions.gradebook.roster.archive(TEACHER, group.group_id)
+    with pytest.raises(GroupArchivedError):
+        await sessions.update(
+            TEACHER,
+            seminar.session_id,
+            starts_at=_at(9, 11),
+            topic="Поздно",
+        )
 
 
 async def test_deleting_a_session_takes_its_points(sessions: Sessions) -> None:

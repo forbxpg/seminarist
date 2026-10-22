@@ -66,6 +66,8 @@ class SessionsSG(StatesGroup):
     list = State()
     new_when = State()
     new_topic = State()
+    edit_when = State()
+    edit_topic = State()
     session = State()
     attendance = State()
     board = State()

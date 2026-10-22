@@ -47,6 +47,15 @@ class SessionRepository(Protocol):
         """
         ...
 
+    async def update(self, session: Session) -> None:
+        """Store a changed time or topic.
+
+        Args:
+            session: Session - The session, changed.
+
+        """
+        ...
+
     async def set_attendance_item(
         self,
         session_id: uuid.UUID,

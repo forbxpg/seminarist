@@ -21,6 +21,7 @@ from smr.sessions.application.use_cases import (
     GradeBoardCall,
     MarkAttendance,
     SessionCalls,
+    UpdateSession,
 )
 from smr.sessions.infrastructure.repositories import (
     SqlAlchemyAttendance,
@@ -52,6 +53,14 @@ class Sessions:
         self.create: CreateSession = CreateSession(
             sessions,
             roster.api,
+            uow,
+            audit,
+            guard,
+        )
+        self.update: UpdateSession = UpdateSession(
+            sessions,
+            roster.api,
+            ledger,
             uow,
             audit,
             guard,

@@ -36,6 +36,7 @@ from smr.sessions.application.use_cases import (
     ListSessions,
     MarkAttendance,
     SessionCalls,
+    UpdateSession,
 )
 from smr.sessions.domain import AttendanceStatus, BoardMode, NoCandidatesError
 
@@ -123,6 +124,47 @@ async def _create(
     )
     manager.dialog_data["session_id"] = str(session.session_id)
     manager.dialog_data.pop("marks", None)
+    await manager.switch_to(SessionsSG.session)
+
+
+@inject
+async def _edit_when(
+    message: Message,
+    _widget: ManagedTextInput[str],
+    manager: DialogManager,
+    value: str,
+    clock: FromDishka[Clock],
+) -> None:
+    now = clock.now()
+    try:
+        starts = now if value.strip().lower() == "сейчас" else parse_moment(value, now)
+    except ValueError:
+        _ = await message.answer("Напишите «сейчас» или дату вида 07.10 10:15.")
+        return
+    manager.dialog_data["starts_at"] = starts.isoformat()
+    await manager.switch_to(SessionsSG.edit_topic)
+
+
+@inject
+async def _edit_topic(
+    message: Message,
+    _widget: ManagedTextInput[str],
+    manager: DialogManager,
+    value: str,
+    update: FromDishka[UpdateSession],
+) -> None:
+    from datetime import datetime  # ruff: ignore[import-outside-top-level] -- only here
+
+    if message.from_user is None:
+        return
+    _ = await update(
+        message.from_user.id,
+        _session(manager),
+        starts_at=datetime.fromisoformat(str(manager.dialog_data["starts_at"])),
+        topic=value,
+    )
+    manager.dialog_data.pop("marks", None)
+    _ = await message.answer("Занятие изменено.")
     await manager.switch_to(SessionsSG.session)
 
 
@@ -365,6 +407,18 @@ sessions_dialog = Dialog(
         state=SessionsSG.new_topic,
     ),
     Window(
+        Const("Новое время занятия? «сейчас» или дата, например 07.10 10:15"),
+        TextInput(id="edit_when", on_success=_edit_when),
+        SwitchTo(Const("Отмена"), id="cancel", state=SessionsSG.session),
+        state=SessionsSG.edit_when,
+    ),
+    Window(
+        Const("Новая тема занятия:"),
+        TextInput(id="edit_topic", on_success=_edit_topic),
+        SwitchTo(Const("Отмена"), id="cancel", state=SessionsSG.session),
+        state=SessionsSG.edit_topic,
+    ),
+    Window(
         Const("Занятие"),
         Row(
             SwitchTo(
@@ -375,6 +429,7 @@ sessions_dialog = Dialog(
             SwitchTo(Const("🎓 К доске"), id="board", state=SessionsSG.board),
         ),
         SwitchTo(Const("📋 Вызовы и баллы"), id="calls", state=SessionsSG.calls),
+        SwitchTo(Const("✏️ Изменить"), id="edit", state=SessionsSG.edit_when),
         SwitchTo(Const("« Занятия"), id="back", state=SessionsSG.list),
         state=SessionsSG.session,
     ),
