@@ -19,6 +19,7 @@ classifiers = ["Private :: Do Not Upload"]
 
 [project.scripts]
 smr-review-mcp = "smr.review_mcp:main"
+smr-review-session = "smr.review_mcp:session_main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
