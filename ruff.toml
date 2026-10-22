@@ -18,6 +18,8 @@ ignore = [
     "ambiguous-unicode-character-string",
     "ambiguous-unicode-character-docstring",
     "ambiguous-unicode-character-comment",
+    # COM812. The formatter owns trailing commas; selecting the code warns on every run.
+    "missing-trailing-comma",
 ]
 
 [lint.pylint]
