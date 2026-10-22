@@ -1994,6 +1994,7 @@ dependencies = [
     { name = "smr-core" },
     { name = "smr-gradebook" },
     { name = "smr-notifications" },
+    { name = "smr-review" },
     { name = "smr-roster" },
 ]
 
@@ -2002,6 +2003,7 @@ requires-dist = [
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-gradebook", editable = "packages/gradebook" },
     { name = "smr-notifications", editable = "packages/notifications" },
+    { name = "smr-review", editable = "packages/review" },
     { name = "smr-roster", editable = "packages/roster" },
 ]
 
@@ -2095,6 +2097,7 @@ dependencies = [
     { name = "smr-bdz" },
     { name = "smr-core" },
     { name = "smr-gradebook" },
+    { name = "smr-homework" },
     { name = "smr-notifications" },
     { name = "smr-review" },
     { name = "smr-roster" },
@@ -2107,6 +2110,7 @@ requires-dist = [
     { name = "smr-bdz", editable = "packages/bdz" },
     { name = "smr-core", editable = "packages/core" },
     { name = "smr-gradebook", editable = "packages/gradebook" },
+    { name = "smr-homework", editable = "packages/homework" },
     { name = "smr-notifications", editable = "packages/notifications" },
     { name = "smr-review", editable = "packages/review" },
     { name = "smr-roster", editable = "packages/roster" },

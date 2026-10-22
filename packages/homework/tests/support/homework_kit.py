@@ -34,6 +34,9 @@ from smr.homework.infrastructure.repositories import (
     SqlAlchemyFiles,
     SqlAlchemySubmissions,
 )
+from smr.review.application.services import Reviews
+from smr.review.application.use_cases import FlagUnreadable
+from smr.review.infrastructure.repositories import SqlAlchemyAppeals, SqlAlchemyVerdicts
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -69,6 +72,7 @@ class Homework:
         notifier = notifications.notifier
         clock = roster.clock
         files = FileStore(data_dir, max_bytes=1024)
+        verdicts = SqlAlchemyVerdicts(session)
         self.data_dir: Path = data_dir
         self.files: FileStore = files
         self.gradebook: Gradebook = gradebook
@@ -147,6 +151,8 @@ class Homework:
             uow,
             audit,
             clock,
+            Reviews(verdicts, SqlAlchemyAppeals(session)),
+            FlagUnreadable(verdicts, notifier, clock),
         )
         self.work: MyWork = MyWork(assignments, submissions, stored, roster.api, ledger)
         self.queue: ReviewQueue = ReviewQueue(submissions, guard)

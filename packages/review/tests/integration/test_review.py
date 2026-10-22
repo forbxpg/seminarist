@@ -7,11 +7,12 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pytest
+from review_kit import FakeSource
 from roster_kit import STUDENT, TEACHER
 from sqlalchemy import select
 
 from smr.core.audit import AUDIT_LOG_TABLE
-from smr.review.application.use_cases import TaskInput, VerdictInput
+from smr.review.application.use_cases import PendingWorks, TaskInput, VerdictInput
 from smr.review.domain import (
     AlreadyReviewedError,
     AppealNotAllowedError,
@@ -21,6 +22,7 @@ from smr.review.domain import (
     VerdictRejectedError,
     VerdictStatus,
 )
+from smr.review.infrastructure.repositories import SqlAlchemyVerdicts
 
 if TYPE_CHECKING:
     import uuid
@@ -76,6 +78,24 @@ async def test_pending_excludes_reviewed(review: Review, roster: Roster) -> None
     assert len(await review.pending()) == 1
     _ = await review.submit(_verdict(work, "7"))
     assert await review.pending() == []
+
+
+async def test_ordinary_homework_waits_for_its_name(
+    review: Review,
+    roster: Roster,
+    session: AsyncSession,
+) -> None:
+    """The default queue is БДЗ. Homework appears only when asked for by name."""
+    student_id = await _student(roster)
+    bdz = review.source.add(student_id, STUDENT)
+    homework = FakeSource()
+    homework.name = "homework"
+    work = homework.add(student_id, STUDENT)
+    pending = PendingWorks((review.source, homework), SqlAlchemyVerdicts(session))
+    listed = await pending()
+    named = await pending("homework")
+    assert [item.work_ref for item in listed] == [f"bdz:{bdz.work_id}"]
+    assert [item.work_ref for item in named] == [f"homework:{work.work_id}"]
 
 
 async def test_clean_verdict_publishes(

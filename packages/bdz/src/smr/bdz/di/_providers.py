@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import final
 
 from dishka import Provider, Scope, provide, provide_all
@@ -33,7 +32,6 @@ from smr.core.clock import Clock
 from smr.core.config import StorageSettings
 from smr.core.files import FileStore
 from smr.review.application.contracts import ReviewApi
-from smr.review.application.ports import ReviewSource
 from smr.roster.application.contracts import RosterApi
 
 
@@ -60,19 +58,6 @@ class BdzProvider(Provider):
         StudentBdzList,
         UpdateBdzDeadline,
     )
-
-    @provide
-    def review_sources(self, source: BdzReviewSource) -> Sequence[ReviewSource]:
-        """Give the review its only source for now.
-
-        Args:
-            source: BdzReviewSource - The БДЗ source.
-
-        Returns:
-            Sequence[ReviewSource] - That one source.
-
-        """
-        return (source,)
 
     @provide
     def limits(self, storage: StorageSettings) -> BdzLimits:

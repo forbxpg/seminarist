@@ -179,6 +179,15 @@ class SubmissionRepository(Protocol):
         """
         ...
 
+    async def submitted(self) -> Sequence[Submission]:
+        """List every submitted, not yet graded version, the earliest first.
+
+        Returns:
+            Sequence[Submission] - The versions the agent may be asked to read.
+
+        """
+        ...
+
     async def waiting(self, group_id: uuid.UUID) -> Sequence[Submission]:
         """List a group's submitted, ungraded versions, the earliest sent first.
 

@@ -51,6 +51,7 @@ runtime-evaluated-decorators = [
 # dishka providers are methods by design, even when they do not use `self`, and
 # dishka always finalizes a generator provider, so a yield inside `async with` is safe.
 "**/di.py" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
+"**/_di.py" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
 "**/di/**" = ["no-self-use", "yield-in-context-manager-in-async-generator"]
 # dishka builds use cases, services and repositories from their `__init__` annotations
 # at runtime: the types they name must be importable, not hidden behind TYPE_CHECKING.

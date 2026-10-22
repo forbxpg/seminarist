@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import TYPE_CHECKING, Literal
 
@@ -18,7 +20,7 @@ from smr.review.application.use_cases import (
     TaskInput,
     TaskSheetFor,
     VerdictInput,
-    WorkFile,
+    WorkPages,
 )
 from smr.review.domain import ReviewError
 
@@ -35,8 +37,29 @@ if TYPE_CHECKING:
     from dishka import AsyncContainer
     from mcp.server import MCPServer
 
+    from smr.review.application.ports import WorkPage
+
 _REFUSED = (ReviewError, ValueError, PdfBrokenError, PdfLockedError)
 _CENT = Decimal("0.01")
+_PAGE_LIMIT = 6
+_UNREADABLE = "Файл не читается. Пришлите PDF или фото страниц."
+_IMAGE_FORMAT = {".jpg": "jpeg", ".jpeg": "jpeg", ".png": "png", ".webp": "webp"}
+
+
+@dataclass(frozen=True, slots=True)
+class _Slot:
+    """One page in the order the agent reads a work.
+
+    Attributes:
+        path: str - A FileStore path.
+        kind: str - `pdf`, `image` or `unread`.
+        number: int - The page inside a PDF. An image is page 1 of itself.
+
+    """
+
+    path: str
+    kind: str
+    number: int
 
 
 def register(server: MCPServer, container: AsyncContainer) -> None:
@@ -49,14 +72,18 @@ def register(server: MCPServer, container: AsyncContainer) -> None:
     """
 
     @server.tool()
-    async def pending_works() -> PendingWorksOut:
+    async def pending_works(source: str | None = None) -> PendingWorksOut:
         """List live works that have no current verdict.
+
+        Args:
+            source: str | None - Only this source. With none, ordinary homework
+                is left out until the teacher asks for it by name.
 
         Returns:
             PendingWorksOut - Oldest first.
 
         """
-        return await _call(container, _pending)
+        return await _call(container, lambda request: _pending(request, source))
 
     @server.tool(structured_output=False)
     async def get_task_sheet(
@@ -68,13 +95,14 @@ def register(server: MCPServer, container: AsyncContainer) -> None:
         """Render pages of the statement or the solutions.
 
         Args:
-            task_key: str - `bdz:<assignment id>`.
-            part: Literal["statement", "solutions"] - Which PDF.
+            task_key: str - `source:<assignment id>`, for example `bdz:` or `homework:`.
+            part: Literal["statement", "solutions"] - Which part.
             start: int - The first page, from 1.
             count: int - How many pages, from 1 to 6.
 
         Returns:
-            list[TextContent | Image] - A short text, then one JPEG per page.
+            list[TextContent | Image] - A short text, then one image per page.
+                A statement that is only text has no images.
 
         """
         return await _call(
@@ -88,15 +116,16 @@ def register(server: MCPServer, container: AsyncContainer) -> None:
         start: int = 1,
         count: int = 6,
     ) -> list[TextContent | Image]:
-        """Render pages of a student's PDF.
+        """Render pages of a student's work.
 
         Args:
-            work_ref: str - `bdz:<version id>`.
+            work_ref: str - `source:<version id>`, for example `bdz:` or `homework:`.
             start: int - The first page, from 1.
             count: int - How many pages, from 1 to 6.
 
         Returns:
-            list[TextContent | Image] - A short text, then one JPEG per page.
+            list[TextContent | Image] - A short text, then one image per page.
+                A photo is returned as itself. A PDF page is a JPEG.
 
         """
         return await _call(
@@ -130,8 +159,8 @@ async def _call[T](
         raise ToolError(reason) from error
 
 
-async def _pending(request: AsyncContainer) -> PendingWorksOut:
-    found = await (await request.get(PendingWorks))()
+async def _pending(request: AsyncContainer, source: str | None) -> PendingWorksOut:
+    found = await (await request.get(PendingWorks))(source)
     return PendingWorksOut(
         works=[
             PendingWorkOut(
@@ -171,12 +200,16 @@ async def _sheet(
         {"number": task.number, "max_points": _money(task.max_points)}
         for task in sheet.scheme
     ]
+    note = f"note: {sheet.note}\n" if sheet.note else ""
     heading = (
         f"{sheet.title}\n"
         f"scheme: {json.dumps(scheme, ensure_ascii=False)}\n"
         f"statement_pages: {sheet.statement_pages}\n"
+        f"{note}"
         f"{_solutions_line(sheet.solutions_pages)}"
     )
+    if part == "statement" and total == 0:
+        return [TextContent(type="text", text=heading)]
     files = await request.get(FileStore)
     return await _images(files, relative, total, start, count, heading)
 
@@ -187,9 +220,9 @@ async def _pages(
     start: int,
     count: int,
 ) -> list[TextContent | Image]:
-    relative, total = await (await request.get(WorkFile))(work_ref)
+    found, total = await (await request.get(WorkPages))(work_ref)
     files = await request.get(FileStore)
-    return await _images(files, relative, total, start, count, "")
+    return await _work_images(files, found, total, start, count)
 
 
 async def _images(
@@ -212,6 +245,57 @@ async def _images(
     blocks: list[TextContent | Image] = [TextContent(type="text", text=text)]
     blocks.extend(Image(data=page, format="jpeg") for page in rendered)
     return blocks
+
+
+async def _work_images(
+    files: FileStore,
+    pages: tuple[WorkPage, ...],
+    total: int,
+    start: int,
+    count: int,
+) -> list[TextContent | Image]:
+    slots = _slots(pages)
+    if count < 1 or count > _PAGE_LIMIT:
+        msg = "count is from 1 to 6"
+        raise ValueError(msg)
+    if start < 1 or start > len(slots):
+        msg = "start is past the last page"
+        raise ValueError(msg)
+    window = slots[start - 1 : start + count - 1]
+    if any(slot.kind == "unread" for slot in window):
+        raise ToolError(_UNREADABLE)
+    rendered: list[Image] = []
+    for slot in window:
+        path = files.path(slot.path)
+        if not path.is_file():
+            msg = "the file is gone: skip this work"
+            raise ToolError(msg)
+        if slot.kind == "pdf":
+            page = await render_pages(path, slot.number, 1)
+            rendered.append(Image(data=page[0], format="jpeg"))
+        else:
+            data = await asyncio.to_thread(path.read_bytes)
+            image_format = _IMAGE_FORMAT.get(path.suffix, "jpeg")
+            rendered.append(Image(data=data, format=image_format))
+    end = start + len(window) - 1
+    blocks: list[TextContent | Image] = [
+        TextContent(type="text", text=f"pages {start}..{end} of {total}"),
+    ]
+    blocks.extend(rendered)
+    return blocks
+
+
+def _slots(pages: tuple[WorkPage, ...]) -> list[_Slot]:
+    slots: list[_Slot] = []
+    for page in pages:
+        if page.kind == "pdf":
+            slots.extend(
+                _Slot(page.path, "pdf", number)
+                for number in range(1, page.pdf_pages + 1)
+            )
+            continue
+        slots.append(_Slot(page.path, page.kind, 1))
+    return slots
 
 
 async def _submit(request: AsyncContainer, verdict: VerdictIn) -> VerdictOutcomeOut:

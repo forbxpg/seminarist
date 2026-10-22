@@ -16,6 +16,7 @@ from smr.homework.application.ports import (
     FileRepository,
     SubmissionRepository,
 )
+from smr.homework.application.services import HomeworkReviewSource
 from smr.homework.application.use_cases import (
     AddFile,
     AssignmentRoster,
@@ -53,6 +54,7 @@ class HomeworkProvider(Provider):
     assignments = provide(SqlAlchemyAssignments, provides=AssignmentRepository)
     submissions = provide(SqlAlchemySubmissions, provides=SubmissionRepository)
     stored = provide(SqlAlchemyFiles, provides=FileRepository)
+    source = provide(HomeworkReviewSource)
 
     use_cases = provide_all(
         AssignmentRoster,

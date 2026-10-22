@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import uuid
 from dataclasses import dataclass
 from decimal import Decimal
+from operator import attrgetter
 from typing import final
 
 from smr.core.audit import ActorKind, AuditEntry, AuditLog
@@ -27,6 +29,8 @@ from smr.homework.domain import (
     SubmissionStatus,
     TooManyFilesError,
 )
+from smr.review.application.contracts import ReviewApi
+from smr.review.application.use_cases import FlagUnreadable
 from smr.roster.application.contracts import RosterApi
 from smr.roster.domain import StudentNotFoundError
 
@@ -34,6 +38,10 @@ from ._common import assignment_of, open_group, student_of
 from ._upload import Upload
 
 STUDENT_KINDS: frozenset[FileKind] = frozenset(FileKind)
+_UNREADABLE = {
+    FileKind.DOCX: "Файл DOCX прочитать нельзя. Пришлите PDF или фото страниц.",
+    FileKind.HEIC: "Формат HEIC показать нельзя. Пришлите JPEG, PNG или PDF.",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,6 +299,8 @@ class Submit:
         uow: UnitOfWork,
         audit: AuditLog,
         clock: Clock,
+        reviews: ReviewApi,
+        flags: FlagUnreadable,
     ) -> None:
         self._assignments: AssignmentRepository = assignments
         self._submissions: SubmissionRepository = submissions
@@ -300,6 +310,8 @@ class Submit:
         self._uow: UnitOfWork = uow
         self._audit: AuditLog = audit
         self._clock: Clock = clock
+        self._reviews: ReviewApi = reviews
+        self._flags: FlagUnreadable = flags
 
     async def __call__(self, tg_user_id: int, assignment_id: uuid.UUID) -> Submission:
         """Submit it.
@@ -337,6 +349,7 @@ class Submit:
             if live is not None:
                 if live.status is SubmissionStatus.GRADED:
                     raise SubmissionClosedError
+                await self._reviews.void("homework", live.submission_id)
                 superseded = list(
                     await self._stored.delete_of_submission(live.submission_id),
                 )
@@ -351,6 +364,18 @@ class Submit:
                 is_late=sent_at > assignment.deadline,
             )
             await self._submissions.update(submitted)
+            explanation = _unreadable(files)
+            if explanation is not None:
+                await self._flags(
+                    "homework",
+                    submitted.submission_id,
+                    _digest(files),
+                    assignment.assignment_id,
+                    student.student_id,
+                    assignment.title,
+                    assignment.max_points,
+                    explanation,
+                )
             await self._audit.record(
                 AuditEntry(
                     ActorKind.STUDENT,
@@ -405,3 +430,22 @@ class MyWork:
             self._stored,
             self._gradebook,
         )
+
+
+def _unreadable(files: list[SubmissionFile]) -> str | None:
+    reasons = [
+        text
+        for kind, text in _UNREADABLE.items()
+        if any(file.kind is kind for file in files)
+    ]
+    if not reasons:
+        return None
+    return " ".join(reasons)
+
+
+def _digest(files: list[SubmissionFile]) -> str:
+    ordered = sorted(files, key=attrgetter("position"))
+    if len(ordered) == 1:
+        return ordered[0].sha256
+    blob = "\n".join(file.sha256 for file in ordered).encode()
+    return hashlib.sha256(blob).hexdigest()

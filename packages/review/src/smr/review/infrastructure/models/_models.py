@@ -33,7 +33,7 @@ class VerdictModel(ReviewBase):
 
     __tablename__: str = VERDICT
     __table_args__: tuple[CheckConstraint | Index, ...] = (
-        CheckConstraint("source IN ('bdz')", name="source_known"),
+        CheckConstraint("source IN ('bdz', 'homework')", name="source_known"),
         CheckConstraint(f"status IN {_STATUSES}", name="status_known"),
         CheckConstraint(
             "grader_kind IN ('agent', 'teacher')",

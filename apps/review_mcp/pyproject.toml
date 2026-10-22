@@ -10,6 +10,7 @@ dependencies = [
     "smr-bdz",
     "smr-core",
     "smr-gradebook",
+    "smr-homework",
     "smr-notifications",
     "smr-review",
     "smr-roster",
@@ -32,6 +33,7 @@ module-name = "smr.review_mcp"
 smr-core = { workspace = true }
 smr-roster = { workspace = true }
 smr-gradebook = { workspace = true }
+smr-homework = { workspace = true }
 smr-notifications = { workspace = true }
 smr-review = { workspace = true }
 smr-bdz = { workspace = true }

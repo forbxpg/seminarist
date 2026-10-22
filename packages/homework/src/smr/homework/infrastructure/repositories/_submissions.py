@@ -167,6 +167,20 @@ class SqlAlchemySubmissions:
         )
         return [_domain(row) for row in rows]
 
+    async def submitted(self) -> Sequence[Submission]:
+        """List every submitted, not yet graded version, the earliest first.
+
+        Returns:
+            Sequence[Submission] - The versions the agent may be asked to read.
+
+        """
+        rows = await self._session.scalars(
+            select(_Row)
+            .where(_Row.status == SubmissionStatus.SUBMITTED.value)
+            .order_by(_Row.sent_at),
+        )
+        return [_domain(row) for row in rows]
+
     async def waiting(self, group_id: uuid.UUID) -> Sequence[Submission]:
         """List a group's submitted, ungraded versions, the earliest sent first.
 
