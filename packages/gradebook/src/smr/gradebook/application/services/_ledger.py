@@ -20,6 +20,7 @@ from smr.gradebook.domain import (
     EntryNotFoundError,
     GradeEntry,
     GradeItem,
+    ItemMoveError,
     ItemNotFoundError,
     PointsOutOfRangeError,
     ScoringMode,
@@ -200,6 +201,57 @@ class Ledger:
         )
         await self._items.update(changed)
         return changed
+
+    async def move_item(
+        self,
+        item_id: uuid.UUID,
+        work_type_id: uuid.UUID,
+    ) -> GradeItem:
+        """Move an item, with its grades, to another work type.
+
+        Args:
+            item_id: uuid.UUID - The item.
+            work_type_id: uuid.UUID - The work type, of the same group and proportional.
+
+        Returns:
+            GradeItem - The item.
+
+        Raises:
+            ItemNotFoundError: If there is no such item.
+            WorkTypeNotFoundError: If there is no such work type.
+            ItemMoveError: If the work type accumulates or belongs to another group.
+
+        """
+        item = await self._items.get(item_id)
+        if item is None:
+            raise ItemNotFoundError
+        target = await self._work_types.get(work_type_id)
+        if target is None:
+            raise WorkTypeNotFoundError
+        source = await self._work_types.get(item.work_type_id)
+        if (
+            source is None
+            or source.group_id != target.group_id
+            or target.mode is not ScoringMode.PROPORTIONAL
+        ):
+            raise ItemMoveError
+        if item.work_type_id == work_type_id:
+            return item
+        moved = dataclasses.replace(item, work_type_id=work_type_id)
+        await self._items.update(moved)
+        await self._entries.retarget(item_id, work_type_id)
+        await self._audit.record(
+            AuditEntry(
+                actor_kind=ActorKind.SYSTEM,
+                actor_id=None,
+                action="item.moved",
+                entity="grade_item",
+                entity_id=str(item_id),
+                before={"work_type_id": str(item.work_type_id)},
+                after={"work_type_id": str(work_type_id)},
+            ),
+        )
+        return moved
 
     async def delete_item(self, item_id: uuid.UUID) -> None:
         """Withdraw an item with its points.

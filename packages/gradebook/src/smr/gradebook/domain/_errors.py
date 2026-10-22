@@ -23,6 +23,10 @@ class ItemNotFoundError(GradebookError):
     """No such graded item."""
 
 
+class ItemMoveError(GradebookError):
+    """The item cannot move to that work type."""
+
+
 class EntryNotFoundError(GradebookError):
     """No such entry of the ledger."""
 

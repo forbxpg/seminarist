@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -377,6 +378,72 @@ class UpdateBdzDeadline:
                     entity="bdz",
                     entity_id=str(bdz_id),
                     after={"deadline": deadline.isoformat()},
+                ),
+            )
+            await self._uow.commit()
+        return changed
+
+
+@final
+class MoveBdz:
+    """Move a БДЗ, with its grades, to another proportional work type."""
+
+    def __init__(
+        self,
+        assignments: AssignmentRepository,
+        roster: RosterApi,
+        gradebook: GradebookApi,
+        audit: AuditLog,
+        uow: UnitOfWork,
+        guard: AdminGuard,
+    ) -> None:
+        self._assignments: AssignmentRepository = assignments
+        self._roster: RosterApi = roster
+        self._gradebook: GradebookApi = gradebook
+        self._audit: AuditLog = audit
+        self._uow: UnitOfWork = uow
+        self._guard: AdminGuard = guard
+
+    async def __call__(
+        self,
+        actor: int,
+        bdz_id: uuid.UUID,
+        work_type_id: uuid.UUID,
+    ) -> Bdz:
+        """Move it.
+
+        An accumulating work type, or one from another group, is refused.
+
+        Args:
+            actor: int - Teacher's Telegram id.
+            bdz_id: uuid.UUID - The БДЗ.
+            work_type_id: uuid.UUID - The work type, of the same group.
+
+        Returns:
+            Bdz - The assignment.
+
+        Raises:
+            BdzNotFoundError: If there is no such БДЗ.
+
+        """
+        self._guard.require(actor)
+        async with self._uow:
+            found = await self._assignments.get(bdz_id)
+            if found is None or found.item_id is None:
+                raise BdzNotFoundError
+            _ = await _open(self._roster, found.group_id)
+            _ = await self._gradebook.move_item(found.item_id, work_type_id)
+            changed = dataclasses.replace(found, work_type_id=work_type_id)
+            await self._assignments.save_work_type(changed)
+            await self._audit.record(
+                AuditEntry(
+                    actor_kind=ActorKind.ADMIN,
+                    actor_id=str(actor),
+                    action="bdz.moved",
+                    entity="bdz",
+                    entity_id=str(bdz_id),
+                    before={"work_type_id": str(found.work_type_id)},
+                    after={"work_type_id": str(work_type_id)},
                 ),
             )
             await self._uow.commit()

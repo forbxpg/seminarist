@@ -21,7 +21,7 @@ from smr.bdz.domain import (
     WorkTypeNotProportionalError,
 )
 from smr.core.files import PdfLockedError
-from smr.gradebook.domain import WorkTypeKind
+from smr.gradebook.domain import ItemMoveError, WorkTypeKind
 from smr.gradebook.infrastructure.models import EntryModel
 from smr.review.application.use_cases import TaskInput, VerdictInput
 from smr.review.domain import AppealOpenError, SchemeTask, VerdictStatus
@@ -510,3 +510,59 @@ async def test_create_without_solutions(
     assert sheet.solutions_path is None
     assert sheet.solutions_pages is None
     assert sheet.statement_pages == 2
+
+
+async def test_moving_a_bdz_keeps_the_grade_and_rescores(
+    bdz: BdzBox,
+    roster: Roster,
+    gradebook: Gradebook,
+) -> None:
+    """The points stay and the total is scored in the new work type."""
+    group, student, tests = await _ready(roster, gradebook)
+    types = {row.kind: row for row in await gradebook.ledger.work_types(group.group_id)}
+    created = await _publish(bdz, roster, group, tests.work_type_id)
+    assert created.item_id is not None
+    _ = await gradebook.ledger.set_entry(
+        student.student_id,
+        created.item_id,
+        Decimal(5),
+        excused=False,
+        comment=None,
+        graded_by=TEACHER,
+    )
+    moved = await bdz.move(
+        TEACHER,
+        created.bdz_id,
+        types[WorkTypeKind.HOMEWORK].work_type_id,
+    )
+    assert moved.work_type_id == types[WorkTypeKind.HOMEWORK].work_type_id
+    grades = await gradebook.item_grades(TEACHER, created.item_id, group.group_id)
+    entry = next(
+        row for person, row in grades if person.student_id == student.student_id
+    )
+    assert entry is not None
+    assert entry.points == Decimal(5)
+    totals = {
+        row.student.full_name: row.score.total
+        for row in await gradebook.sheet(TEACHER, group.group_id)
+    }
+    assert totals["Иванов"] == Decimal(6)
+    with pytest.raises(ItemMoveError):
+        await bdz.move(
+            TEACHER,
+            created.bdz_id,
+            types[WorkTypeKind.BOARD].work_type_id,
+        )
+    other = await roster.create(
+        TEACHER,
+        title="К02-261",
+        subject="ДМ",
+        semester="осень 2026",
+    )
+    foreign = {row.kind: row for row in await gradebook.scheme(TEACHER, other.group_id)}
+    with pytest.raises(ItemMoveError):
+        await bdz.move(
+            TEACHER,
+            created.bdz_id,
+            foreign[WorkTypeKind.TEST].work_type_id,
+        )

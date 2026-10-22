@@ -141,6 +141,7 @@ class BdzSG(StatesGroup):
     new_deadline = State()
     new_confirm = State()
     deadline = State()
+    move = State()
     roster = State()
     delete = State()
 

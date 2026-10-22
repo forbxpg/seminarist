@@ -70,6 +70,15 @@ class AssignmentRepository(Protocol):
         """
         ...
 
+    async def save_work_type(self, bdz: Bdz) -> None:
+        """Store a new work type.
+
+        Args:
+            bdz: Bdz - The assignment with the new work type.
+
+        """
+        ...
+
     async def delete(self, bdz_id: uuid.UUID) -> Bdz | None:
         """Delete a БДЗ. Submissions cascade.
 

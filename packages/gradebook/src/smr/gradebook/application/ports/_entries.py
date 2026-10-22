@@ -88,6 +88,16 @@ class EntryRepository(Protocol):
         """
         ...
 
+    async def retarget(self, item_id: uuid.UUID, work_type_id: uuid.UUID) -> None:
+        """Point an item's entries at another work type, leaving the points.
+
+        Args:
+            item_id: uuid.UUID - The item.
+            work_type_id: uuid.UUID - The work type.
+
+        """
+        ...
+
     async def update(self, entry: GradeEntry) -> None:
         """Store a changed entry.
 
