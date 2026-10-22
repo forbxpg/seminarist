@@ -26,6 +26,7 @@ from smr.core.config import RedisSettings
 
 if TYPE_CHECKING:
     from aiogram.fsm.storage.base import BaseStorage
+    from aiogram_dialog.api.protocols import MessageManagerProtocol
     from dishka import AsyncContainer
 
 
@@ -36,6 +37,7 @@ def build_dispatcher(
     container: AsyncContainer,
     storage: BaseStorage,
     guard: AdminGuard,
+    message_manager: MessageManagerProtocol | None = None,
 ) -> Dispatcher:
     """Put the routers, dialogs, middlewares and DI together.
 
@@ -43,6 +45,8 @@ def build_dispatcher(
         container: AsyncContainer - The dependencies.
         storage: BaseStorage - Where dialog state lives.
         guard: AdminGuard - Who the teachers are.
+        message_manager: MessageManagerProtocol | None - Where dialog texts go;
+            the real Telegram sender when omitted.
 
     Returns:
         Dispatcher - Ready to poll.
@@ -59,7 +63,7 @@ def build_dispatcher(
         consent_dialog,
         *admin_dialogs(),
     )
-    _ = setup_dialogs(dispatcher)
+    _ = setup_dialogs(dispatcher, message_manager=message_manager)
     setup_dishka(container, router=dispatcher, auto_inject=True)
     consent = ConsentMiddleware()
     _ = dispatcher.message.middleware(consent)

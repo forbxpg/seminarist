@@ -2,16 +2,26 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pytest
 from roster_kit import TEACHER
+from sqlalchemy import select
 
+from smr.core.audit import AUDIT_LOG_TABLE
+from smr.core.clock import MOSCOW
+from smr.gradebook.infrastructure.repositories import SqlAlchemyEntries, SqlAlchemyItems
+from smr.roster.domain import GroupArchivedError
 from smr.sessions.domain import AttendanceStatus, BoardMode, NoCandidatesError
+from smr.sessions.infrastructure.repositories import SqlAlchemySessions
 
 if TYPE_CHECKING:
+    import uuid
+
     from sessions_kit import Sessions
+    from sqlalchemy.ext.asyncio import AsyncSession
 
     from smr.roster.domain import Group, Student
     from smr.sessions.domain import Session
@@ -151,6 +161,175 @@ async def test_rarely_called_are_likelier(sessions: Sessions) -> None:
         for c in await sessions.candidates(TEACHER, second.session_id)
     }
     assert chances[petrov.student_id] > chances[ivanov.student_id]
+
+
+def _at(day: int, hour: int, minute: int = 0) -> datetime:
+    return datetime(2026, 10, day, hour, minute, tzinfo=MOSCOW).astimezone(UTC)
+
+
+async def _titles(db: AsyncSession, *session_ids: uuid.UUID) -> list[str]:
+    stored = SqlAlchemySessions(db)
+    items = SqlAlchemyItems(db)
+    titles: list[str] = []
+    for session_id in session_ids:
+        found = await stored.get(session_id)
+        assert found is not None
+        assert found.attendance_item_id is not None
+        item = await items.get(found.attendance_item_id)
+        assert item is not None
+        titles.append(item.title)
+    return titles
+
+
+async def test_one_session_a_day_is_labelled_by_date(
+    sessions: Sessions,
+    session: AsyncSession,
+) -> None:
+    """A lone session keeps the date-only ledger line."""
+    group, (ivanov, _, _), _seminar = await _setup(sessions)
+    morning = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 10),
+        topic="Утро",
+    )
+    await sessions.mark(
+        TEACHER,
+        morning.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    assert await _titles(session, morning.session_id) == ["Занятие 08.10"]
+
+
+async def test_two_sessions_one_day_are_labelled_with_time(
+    sessions: Sessions,
+    session: AsyncSession,
+) -> None:
+    """A second session the same day adds the clock time to both lines, points stay."""
+    group, (ivanov, _, _), _seminar = await _setup(sessions)
+    morning = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 10),
+        topic="Утро",
+    )
+    await sessions.mark(
+        TEACHER,
+        morning.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    morning_row = await SqlAlchemySessions(session).get(morning.session_id)
+    assert morning_row is not None
+    morning_item_id = morning_row.attendance_item_id
+    assert morning_item_id is not None
+    morning_points = await SqlAlchemyEntries(session).for_item(
+        ivanov.student_id,
+        morning_item_id,
+    )
+    assert morning_points is not None
+    assert morning_points.points == Decimal(1)
+    afternoon = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 14, 30),
+        topic="День",
+    )
+    await sessions.mark(
+        TEACHER,
+        afternoon.session_id,
+        {ivanov.student_id: AttendanceStatus.ABSENT},
+    )
+    assert await _titles(session, morning.session_id, afternoon.session_id) == [
+        "Занятие 08.10 10:00",
+        "Занятие 08.10 14:30",
+    ]
+    kept = await SqlAlchemyEntries(session).for_item(
+        ivanov.student_id,
+        morning_item_id,
+    )
+    assert kept is not None
+    assert kept.entry_id == morning_points.entry_id
+    assert kept.points == Decimal(1)
+    assert kept.excused is False
+
+
+async def test_updating_a_session_moves_its_attendance_line(
+    sessions: Sessions,
+    session: AsyncSession,
+) -> None:
+    """A new time renames both days and keeps the points already given."""
+    group, (ivanov, _, _), _seminar = await _setup(sessions)
+    morning = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 10),
+        topic="Утро",
+    )
+    afternoon = await sessions.create(
+        TEACHER,
+        group.group_id,
+        starts_at=_at(8, 14, 30),
+        topic="День",
+    )
+    await sessions.mark(
+        TEACHER,
+        morning.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    await sessions.mark(
+        TEACHER,
+        afternoon.session_id,
+        {ivanov.student_id: AttendanceStatus.PRESENT},
+    )
+    changed = await sessions.update(
+        TEACHER,
+        afternoon.session_id,
+        starts_at=_at(9, 11),
+        topic="  Перенос  ",
+    )
+    assert changed.topic == "Перенос"
+    assert changed.starts_at == _at(9, 11)
+    assert await _titles(session, morning.session_id, afternoon.session_id) == [
+        "Занятие 08.10",
+        "Занятие 09.10",
+    ]
+    moved = await SqlAlchemySessions(session).get(afternoon.session_id)
+    assert moved is not None
+    item_id = moved.attendance_item_id
+    assert item_id is not None
+    item = await SqlAlchemyItems(session).get(item_id)
+    assert item is not None
+    assert item.counts_from == _at(9, 11)
+    entry = await SqlAlchemyEntries(session).for_item(ivanov.student_id, item_id)
+    assert entry is not None
+    assert entry.points == Decimal(1)
+    audit = (
+        (
+            await session.execute(
+                select(AUDIT_LOG_TABLE).where(
+                    AUDIT_LOG_TABLE.c.action == "session.changed"
+                ),
+            )
+        )
+        .mappings()
+        .one()
+    )
+    assert audit["actor_id"] == str(TEACHER)
+    assert audit["before"]["topic"] == "День"
+    assert audit["after"]["topic"] == "Перенос"
+
+
+async def test_an_archived_group_refuses_a_session_edit(sessions: Sessions) -> None:
+    """An archived group keeps its sessions as they were."""
+    group, _, seminar = await _setup(sessions)
+    await sessions.gradebook.roster.archive(TEACHER, group.group_id)
+    with pytest.raises(GroupArchivedError):
+        await sessions.update(
+            TEACHER,
+            seminar.session_id,
+            starts_at=_at(9, 11),
+            topic="Поздно",
+        )
 
 
 async def test_deleting_a_session_takes_its_points(sessions: Sessions) -> None:

@@ -7,11 +7,12 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pytest
+from review_kit import FakeSource
 from roster_kit import STUDENT, TEACHER
 from sqlalchemy import select
 
 from smr.core.audit import AUDIT_LOG_TABLE
-from smr.review.application.use_cases import TaskInput, VerdictInput
+from smr.review.application.use_cases import PendingWorks, TaskInput, VerdictInput
 from smr.review.domain import (
     AlreadyReviewedError,
     AppealNotAllowedError,
@@ -21,6 +22,7 @@ from smr.review.domain import (
     VerdictRejectedError,
     VerdictStatus,
 )
+from smr.review.infrastructure.repositories import SqlAlchemyVerdicts
 
 if TYPE_CHECKING:
     import uuid
@@ -49,9 +51,15 @@ async def _student(roster: Roster) -> uuid.UUID:
     return student.student_id
 
 
-def _verdict(work: WorkRef, points: str, **flags: bool) -> VerdictInput:
+def _verdict(
+    work: WorkRef,
+    points: str,
+    *,
+    source: str = "bdz",
+    **flags: bool,
+) -> VerdictInput:
     return VerdictInput(
-        work_ref=f"bdz:{work.work_id}",
+        work_ref=f"{source}:{work.work_id}",
         sha256=work.sha256,
         grader="m",
         summary="",
@@ -76,6 +84,24 @@ async def test_pending_excludes_reviewed(review: Review, roster: Roster) -> None
     assert len(await review.pending()) == 1
     _ = await review.submit(_verdict(work, "7"))
     assert await review.pending() == []
+
+
+async def test_ordinary_homework_waits_for_its_name(
+    review: Review,
+    roster: Roster,
+    session: AsyncSession,
+) -> None:
+    """The default queue is БДЗ. Homework appears only when asked for by name."""
+    student_id = await _student(roster)
+    bdz = review.source.add(student_id, STUDENT)
+    homework = FakeSource()
+    homework.name = "homework"
+    work = homework.add(student_id, STUDENT)
+    pending = PendingWorks((review.source, homework), SqlAlchemyVerdicts(session))
+    listed = await pending()
+    named = await pending("homework")
+    assert [item.work_ref for item in listed] == [f"bdz:{bdz.work_id}"]
+    assert [item.work_ref for item in named] == [f"homework:{work.work_id}"]
 
 
 async def test_clean_verdict_publishes(
@@ -222,6 +248,32 @@ async def _current(review: Review, work: WorkRef) -> uuid.UUID:
     view = await review.mine(STUDENT, "bdz", work.work_id)
     assert view is not None
     return view.verdict.verdict_id
+
+
+async def test_homework_appeal_names_the_source(
+    review: Review,
+    roster: Roster,
+    notifications: Notifications,
+) -> None:
+    """An appeal and the teacher's grade say this was ordinary homework."""
+    review.source.name = "homework"
+    work = review.source.add(await _student(roster), STUDENT)
+    _ = await review.submit(_verdict(work, "2", source="homework"))
+    _ = await review.appeal(
+        STUDENT,
+        "homework",
+        work.work_id,
+        "Не согласен с баллом за задачу.",
+    )
+    queued = await notifications.queued()
+    filed = next(item for item in queued if item.kind == "appeal_filed")
+    assert filed.payload["label"] == "домашнее задание"
+    view = await review.mine(STUDENT, "homework", work.work_id)
+    assert view is not None
+    _ = await review.finalize(TEACHER, view.verdict.verdict_id, {1: Decimal(1)}, {}, "")
+    queued = await notifications.queued()
+    assert queued[-1].kind == "review_final"
+    assert queued[-1].payload["label"] == "домашнее задание"
 
 
 async def test_appeal_rules(review: Review, roster: Roster) -> None:

@@ -112,6 +112,23 @@ class GradebookApi(Protocol):
         """
         ...
 
+    async def move_item(
+        self,
+        item_id: uuid.UUID,
+        work_type_id: uuid.UUID,
+    ) -> GradeItem:
+        """Move an item, with its grades, to another work type.
+
+        Args:
+            item_id: uuid.UUID - The item.
+            work_type_id: uuid.UUID - The work type, of the same group and proportional.
+
+        Returns:
+            GradeItem - The item.
+
+        """
+        ...
+
     async def delete_item(self, item_id: uuid.UUID) -> None:
         """Withdraw an item with its points.
 

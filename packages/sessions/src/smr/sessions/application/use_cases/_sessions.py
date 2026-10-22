@@ -1,4 +1,4 @@
-"""The teacher's sessions: create, list, delete."""
+"""The teacher's sessions: create, change, list, delete."""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from smr.sessions.application.ports import BoardCallRepository, SessionRepositor
 from smr.sessions.domain import Session
 
 from ._common import existing, open_group
+from ._labels import moscow_day, sync_attendance_titles
 
 
 @final
@@ -78,6 +79,84 @@ class CreateSession:
             )
             await self._uow.commit()
         return session
+
+
+@final
+class UpdateSession:
+    """A session's time and topic, and the attendance line follows."""
+
+    def __init__(
+        self,
+        sessions: SessionRepository,
+        roster: RosterApi,
+        gradebook: GradebookApi,
+        uow: UnitOfWork,
+        audit: AuditLog,
+        guard: AdminGuard,
+    ) -> None:
+        self._sessions: SessionRepository = sessions
+        self._roster: RosterApi = roster
+        self._gradebook: GradebookApi = gradebook
+        self._uow: UnitOfWork = uow
+        self._audit: AuditLog = audit
+        self._guard: AdminGuard = guard
+
+    async def __call__(
+        self,
+        actor: int,
+        session_id: uuid.UUID,
+        *,
+        starts_at: datetime,
+        topic: str,
+    ) -> Session:
+        """Change it.
+
+        Args:
+            actor: int - Teacher's Telegram id.
+            session_id: uuid.UUID - The session.
+            starts_at: datetime - When it starts.
+            topic: str - What it is about.
+
+        Returns:
+            Session - The session.
+
+        """
+        self._guard.require(actor)
+        cleaned = " ".join(topic.split()) or "Семинар"
+        async with self._uow:
+            session = await existing(self._sessions, session_id)
+            _ = await open_group(self._roster, session.group_id)
+            changed = Session(
+                session_id=session.session_id,
+                group_id=session.group_id,
+                starts_at=starts_at,
+                topic=cleaned,
+                attendance_item_id=session.attendance_item_id,
+            )
+            await self._sessions.update(changed)
+            await sync_attendance_titles(
+                self._sessions,
+                self._gradebook,
+                session.group_id,
+                moscow_day(session.starts_at),
+                moscow_day(starts_at),
+            )
+            await self._audit.record(
+                AuditEntry(
+                    actor_kind=ActorKind.ADMIN,
+                    actor_id=str(actor),
+                    action="session.changed",
+                    entity="seminar_session",
+                    entity_id=str(session_id),
+                    before={
+                        "starts_at": session.starts_at.isoformat(),
+                        "topic": session.topic,
+                    },
+                    after={"starts_at": starts_at.isoformat(), "topic": cleaned},
+                ),
+            )
+            await self._uow.commit()
+        return changed
 
 
 @final

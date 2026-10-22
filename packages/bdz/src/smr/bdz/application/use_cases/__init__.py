@@ -14,6 +14,7 @@ from ._teacher import (
     CreateBdz,
     DeleteBdz,
     ListBdz,
+    MoveBdz,
     RosterLine,
     UpdateBdzDeadline,
 )
@@ -31,6 +32,7 @@ __all__ = (
     "DeleteStudentBdzFiles",
     "ExportBdz",
     "ListBdz",
+    "MoveBdz",
     "RosterLine",
     "SendBdz",
     "StudentBdz",

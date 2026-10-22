@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 from ._repositories import AppealRepository, VerdictRepository
-from ._source import ReviewSource, TaskSheet, WorkRef
+from ._source import ReviewSource, TaskSheet, WorkPage, WorkRef
 
 __all__ = (
     "AppealRepository",
     "ReviewSource",
     "TaskSheet",
     "VerdictRepository",
+    "WorkPage",
     "WorkRef",
 )

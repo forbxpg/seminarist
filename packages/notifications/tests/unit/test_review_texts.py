@@ -34,6 +34,35 @@ def test_review_published() -> None:
     )
 
 
+def test_homework_published_names_the_work_and_the_breakdown() -> None:
+    """Ordinary homework uses its own label and the one-task explanation."""
+    assert render(
+        NotificationKind.REVIEW_PUBLISHED,
+        {
+            "title": "ДЗ 3",
+            "total": "2",
+            "max": "3",
+            "appeal_until": _DEADLINE,
+            "label": "домашнее задание",
+            "breakdown": "Верно.",
+        },
+    ) == (
+        "🤖 Ваше домашнее задание <b>ДЗ 3</b> проверил ИИ-ассистент: 2 из 3. "
+        "Верно. Не согласны — подайте апелляцию до 07.10 23:59; "
+        "её проверит преподаватель."
+    )
+
+
+def test_homework_manual_names_the_work() -> None:
+    """A file the agent cannot read is still called homework, not a БДЗ."""
+    text = render(
+        NotificationKind.REVIEW_MANUAL,
+        {"title": "ДЗ 3", "pages": [1], "label": "домашнее задание"},
+    )
+    assert "Ваше домашнее задание <b>ДЗ 3</b>" in text
+    assert "БДЗ" not in text
+
+
 def test_review_manual_with_pages() -> None:
     """Unreadable pages are named, and a better scan is still offered."""
     assert render(
@@ -61,6 +90,28 @@ def test_review_final_with_before() -> None:
         "✅ Преподаватель проверил БДЗ <b>Контрольная</b>: 5 из 10 (было 7). "
         "Это окончательная оценка."
     )
+
+
+def test_homework_final_and_appeal_use_the_label() -> None:
+    """A teacher's grade and an appeal name ordinary homework, not a БДЗ."""
+    final = render(
+        NotificationKind.REVIEW_FINAL,
+        {
+            "title": "ДЗ 3",
+            "total": "2",
+            "max": "3",
+            "before": "1",
+            "label": "домашнее задание",
+        },
+    )
+    appeal = render(
+        NotificationKind.APPEAL_FILED,
+        {"title": "ДЗ 3", "work_no": "abcd1234", "label": "домашнее задание"},
+    )
+    assert "проверил домашнее задание <b>ДЗ 3</b>" in final
+    assert "БДЗ" not in final
+    assert "Апелляция по домашнему заданию <b>ДЗ 3</b>" in appeal
+    assert "БДЗ" not in appeal
 
 
 def test_final_without_before_has_no_was() -> None:

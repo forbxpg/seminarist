@@ -73,6 +73,19 @@ class SqlAlchemySessions:
         )
         return [_session(row) for row in rows]
 
+    async def update(self, session: Session) -> None:
+        """Store a changed time or topic.
+
+        Args:
+            session: Session - The session, changed.
+
+        """
+        _ = await self._session.execute(
+            update(SessionModel)
+            .where(SessionModel.id == session.session_id)
+            .values(starts_at=session.starts_at, topic=session.topic),
+        )
+
     async def set_attendance_item(
         self,
         session_id: uuid.UUID,

@@ -11,7 +11,9 @@ from ._agent import (
     VerdictInput,
     VerdictOutcome,
     WorkFile,
+    WorkPages,
 )
+from ._flag import FlagUnreadable
 from ._student import FileAppeal, MyVerdict, VerdictView
 from ._teacher import (
     FinalizeByTeacher,
@@ -24,6 +26,7 @@ from ._teacher import (
 __all__ = (
     "FileAppeal",
     "FinalizeByTeacher",
+    "FlagUnreadable",
     "MyVerdict",
     "OpenForTeacher",
     "PendingWork",
@@ -38,4 +41,5 @@ __all__ = (
     "VerdictOutcome",
     "VerdictView",
     "WorkFile",
+    "WorkPages",
 )

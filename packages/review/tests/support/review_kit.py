@@ -13,7 +13,7 @@ import pytest
 from smr.core.access import AdminGuard
 from smr.core.audit import SqlAlchemyAuditLog
 from smr.core.database import SqlAlchemyUnitOfWork
-from smr.review.application.ports import ReviewSource, TaskSheet, WorkRef
+from smr.review.application.ports import ReviewSource, TaskSheet, WorkPage, WorkRef
 from smr.review.application.services import Reviews
 from smr.review.application.use_cases import (
     FileAppeal,
@@ -124,6 +124,13 @@ class FakeSource:
     async def work_path(self, work_id: uuid.UUID) -> str:
         """Tell where the PDF is."""
         return self.paths[work_id]
+
+    async def pages(self, work_id: uuid.UUID) -> tuple[WorkPage, ...]:
+        """The one PDF, when the version is known."""
+        work = self.works.get(work_id)
+        if work is None:
+            return ()
+        return (WorkPage(self.paths[work_id], "pdf", work.pages),)
 
     async def belongs_to(self, work_id: uuid.UUID, tg_user_id: int) -> bool:
         """Tell whether the account owns the version."""

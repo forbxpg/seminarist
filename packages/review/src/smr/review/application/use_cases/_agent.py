@@ -16,7 +16,12 @@ from smr.core.clock import Clock
 from smr.core.database import UnitOfWork
 from smr.notifications.application.contracts import NotificationsApi
 from smr.notifications.domain import NotificationKind
-from smr.review.application.ports import ReviewSource, TaskSheet, VerdictRepository
+from smr.review.application.ports import (
+    ReviewSource,
+    TaskSheet,
+    VerdictRepository,
+    WorkPage,
+)
 from smr.review.domain import (
     AlreadyReviewedError,
     GraderKind,
@@ -33,6 +38,7 @@ from smr.review.domain import (
 
 from ._keys import parse_key, source_of
 
+_HOMEWORK = "homework"
 _ZERO = Decimal(0)
 _CENT = Decimal("0.01")
 _SUMMARY_LIMIT = 1000
@@ -139,25 +145,33 @@ class PendingWorks:
         self._sources: Sequence[ReviewSource] = sources
         self._verdicts: VerdictRepository = verdicts
 
-    async def __call__(self) -> list[PendingWork]:
+    async def __call__(self, source: str | None = None) -> list[PendingWork]:
         """List them, oldest first.
+
+        Args:
+            source: str | None - Only this source. With none, ordinary homework
+                is left out until the teacher asks for it by name.
 
         Returns:
             list[PendingWork] - The works. No student id, no name.
 
         """
         found: list[tuple[datetime, PendingWork]] = []
-        for source in self._sources:
-            reviewed = await self._verdicts.current_work_ids(source.name)
-            for work in await source.live_works():
+        for origin in self._sources:
+            if source is None and origin.name == _HOMEWORK:
+                continue
+            if source is not None and origin.name != source:
+                continue
+            reviewed = await self._verdicts.current_work_ids(origin.name)
+            for work in await origin.live_works():
                 if work.work_id in reviewed:
                     continue
                 found.append(
                     (
                         work.sent_at,
                         PendingWork(
-                            work_ref=f"{source.name}:{work.work_id}",
-                            task_key=f"{source.name}:{work.task_ref}",
+                            work_ref=f"{origin.name}:{work.work_id}",
+                            task_key=f"{origin.name}:{work.task_ref}",
                             title=work.title,
                             version=work.version,
                             pages=work.pages,
@@ -218,6 +232,34 @@ class WorkFile:
         if work is None:
             raise StaleWorkError
         return await source.work_path(work_id), work.pages
+
+
+@final
+class WorkPages:
+    """The files of a live version, in reading order, and how many pages they make."""
+
+    def __init__(self, sources: Sequence[ReviewSource]) -> None:
+        self._sources: Sequence[ReviewSource] = sources
+
+    async def __call__(self, work_ref: str) -> tuple[tuple[WorkPage, ...], int]:
+        """Read them.
+
+        Args:
+            work_ref: str - `source:work_id`.
+
+        Returns:
+            tuple[tuple[WorkPage, ...], int] - The files and the page count.
+
+        Raises:
+            StaleWorkError: If the version is not live.
+
+        """
+        name, work_id = parse_key(work_ref)
+        source = source_of(self._sources, name)
+        work = await source.work(work_id)
+        if work is None:
+            raise StaleWorkError
+        return tuple(await source.pages(work_id)), work.pages
 
 
 @final
@@ -318,10 +360,13 @@ class SubmitVerdict:
             pages = sorted(
                 {page for task in tasks if task.unreadable for page in task.pages},
             )
+            payload = {"title": title, "pages": pages}
+            if source.name == _HOMEWORK:
+                payload["label"] = "домашнее задание"
             _ = await self._notifications.notify_student(
                 student_id,
                 NotificationKind.REVIEW_MANUAL,
-                {"title": title, "pages": pages},
+                payload,
                 dedupe,
             )
             return
@@ -332,15 +377,19 @@ class SubmitVerdict:
             agent=verdict.grader,
         )
         until = appeal_open_until(now).isoformat()
+        payload: dict[str, object] = {
+            "title": title,
+            "total": _money(verdict.total),
+            "max": _money(verdict.max_points),
+            "appeal_until": until,
+        }
+        if source.name == _HOMEWORK and tasks:
+            payload["label"] = "домашнее задание"
+            payload["breakdown"] = tasks[0].explanation
         _ = await self._notifications.notify_student(
             student_id,
             NotificationKind.REVIEW_PUBLISHED,
-            {
-                "title": title,
-                "total": _money(verdict.total),
-                "max": _money(verdict.max_points),
-                "appeal_until": until,
-            },
+            payload,
             dedupe,
         )
 

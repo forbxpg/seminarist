@@ -12,7 +12,7 @@ from ._board import (
     GradeBoardCall,
     SessionCalls,
 )
-from ._sessions import CreateSession, DeleteSession, ListSessions
+from ._sessions import CreateSession, DeleteSession, ListSessions, UpdateSession
 
 __all__ = (
     "AttendanceSheet",
@@ -27,4 +27,5 @@ __all__ = (
     "ListSessions",
     "MarkAttendance",
     "SessionCalls",
+    "UpdateSession",
 )

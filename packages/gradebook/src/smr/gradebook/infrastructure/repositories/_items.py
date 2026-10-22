@@ -99,6 +99,7 @@ class SqlAlchemyItems:
             update(_Row)
             .where(_Row.id == item.item_id)
             .values(
+                work_type_id=item.work_type_id,
                 title=item.title,
                 max_points=item.max_points,
                 counts_from=item.counts_from,

@@ -57,6 +57,7 @@ class TaskSheet:
         solutions_path: str | None - The solutions, never sent to students; None
             when the agent solves the tasks itself.
         solutions_pages: int | None - How many pages they have.
+        note: str - Text of the statement when it is not a PDF. Empty otherwise.
 
     """
 
@@ -68,6 +69,23 @@ class TaskSheet:
     statement_pages: int
     solutions_path: str | None
     solutions_pages: int | None
+    note: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class WorkPage:
+    """One file of a work, in the order a student sent the files.
+
+    Attributes:
+        path: str - A FileStore path.
+        kind: str - `pdf`, `image`, or `unread` when the file cannot be shown.
+        pdf_pages: int - Pages of a PDF. An image or an unreadable file counts as one.
+
+    """
+
+    path: str
+    kind: str
+    pdf_pages: int
 
 
 class ReviewSource(Protocol):
@@ -115,13 +133,25 @@ class ReviewSource(Protocol):
         ...
 
     async def work_path(self, work_id: uuid.UUID) -> str:
-        """Tell where the version's PDF is stored.
+        """Tell where the version's file is stored.
 
         Args:
             work_id: uuid.UUID - The version.
 
         Returns:
-            str - A FileStore path.
+            str - A FileStore path. The first file when the work has several.
+
+        """
+        ...
+
+    async def pages(self, work_id: uuid.UUID) -> Sequence[WorkPage]:
+        """List the files the agent reads, in order.
+
+        Args:
+            work_id: uuid.UUID - The version.
+
+        Returns:
+            Sequence[WorkPage] - PDFs and images. A missing version is empty.
 
         """
         ...

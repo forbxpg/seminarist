@@ -12,6 +12,7 @@ from smr.review.application.services import Reviews
 from smr.review.application.use_cases import (
     FileAppeal,
     FinalizeByTeacher,
+    FlagUnreadable,
     MyVerdict,
     OpenForTeacher,
     PendingWorks,
@@ -19,6 +20,7 @@ from smr.review.application.use_cases import (
     TaskSheetFor,
     TeacherQueue,
     WorkFile,
+    WorkPages,
 )
 from smr.review.infrastructure.repositories import SqlAlchemyAppeals, SqlAlchemyVerdicts
 
@@ -39,6 +41,7 @@ class ReviewProvider(Provider):
     use_cases = provide_all(
         FileAppeal,
         FinalizeByTeacher,
+        FlagUnreadable,
         MyVerdict,
         OpenForTeacher,
         PendingWorks,
@@ -46,4 +49,5 @@ class ReviewProvider(Provider):
         TaskSheetFor,
         TeacherQueue,
         WorkFile,
+        WorkPages,
     )

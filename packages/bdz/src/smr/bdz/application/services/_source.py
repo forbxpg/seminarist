@@ -10,7 +10,7 @@ from typing import final
 from smr.bdz.application.ports import AssignmentRepository, SubmissionRepository
 from smr.bdz.domain import SubmissionStatus
 from smr.gradebook.application.contracts import GradebookApi
-from smr.review.application.ports import TaskSheet, WorkRef
+from smr.review.application.ports import TaskSheet, WorkPage, WorkRef
 from smr.roster.application.contracts import RosterApi
 
 
@@ -111,6 +111,21 @@ class BdzReviewSource:
             msg = "unknown submission"
             raise ValueError(msg)
         return submission.path
+
+    async def pages(self, work_id: uuid.UUID) -> Sequence[WorkPage]:
+        """List the PDF the agent reads.
+
+        Args:
+            work_id: uuid.UUID - The version.
+
+        Returns:
+            Sequence[WorkPage] - The one PDF, or nothing when the version is gone.
+
+        """
+        submission = await self._submissions.get(work_id)
+        if submission is None:
+            return ()
+        return (WorkPage(submission.path, "pdf", submission.pages),)
 
     async def belongs_to(self, work_id: uuid.UUID, tg_user_id: int) -> bool:
         """Tell whether the account owns the version.

@@ -23,6 +23,7 @@ from smr.sessions.application.use_cases import (
     ListSessions,
     MarkAttendance,
     SessionCalls,
+    UpdateSession,
 )
 from smr.sessions.infrastructure.repositories import (
     SqlAlchemyAttendance,
@@ -65,4 +66,5 @@ class SessionsProvider(Provider):
         ListSessions,
         MarkAttendance,
         SessionCalls,
+        UpdateSession,
     )

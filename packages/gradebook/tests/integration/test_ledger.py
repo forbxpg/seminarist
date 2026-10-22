@@ -11,18 +11,21 @@ from roster_kit import STUDENT, TEACHER
 from smr.gradebook.application.use_cases import EXCUSED
 from smr.gradebook.domain import (
     EntryNotFoundError,
+    ItemMoveError,
     PointsOutOfRangeError,
     ScoringMode,
     WorkTypeInUseError,
     WorkTypeKind,
     WorkTypeKindTakenError,
 )
+from smr.gradebook.infrastructure.repositories import SqlAlchemyItems
 from smr.roster.domain import StudentNotFoundError
 
 if TYPE_CHECKING:
     import uuid
 
     from gradebook_kit import Gradebook
+    from sqlalchemy.ext.asyncio import AsyncSession
 
     from smr.gradebook.domain import WorkType
     from smr.roster.domain import Group, Student
@@ -212,6 +215,73 @@ async def test_removing_a_student_removes_their_points(gradebook: Gradebook) -> 
     assert ivanov.student_id not in await gradebook.ledger.scores(group.group_id)
     with pytest.raises(EntryNotFoundError):
         await gradebook.edit(TEACHER, entry.entry_id, Decimal(1), None)
+
+
+async def test_moving_an_item_keeps_grades_and_rescores(gradebook: Gradebook) -> None:
+    """Grades follow the item; the total is scored in the new work type."""
+    group, (ivanov, _, _), types = await _setup(gradebook)
+    homework = types[WorkTypeKind.HOMEWORK]
+    tests = types[WorkTypeKind.TEST]
+    item = await gradebook.create_item(
+        TEACHER,
+        homework.work_type_id,
+        title="ДЗ 1",
+        max_points=Decimal(10),
+    )
+    await gradebook.set_grades(TEACHER, item.item_id, {ivanov.student_id: Decimal(5)})
+    before = {
+        row.student.full_name: row.score.total
+        for row in await gradebook.sheet(TEACHER, group.group_id)
+    }
+    assert before["Иванов"] == Decimal(6)
+    moved = await gradebook.ledger.move_item(item.item_id, tests.work_type_id)
+    assert moved.work_type_id == tests.work_type_id
+    grades = await gradebook.item_grades(TEACHER, item.item_id, group.group_id)
+    entry = next(
+        row for student, row in grades if student.student_id == ivanov.student_id
+    )
+    assert entry is not None
+    assert entry.points == Decimal(5)
+    assert entry.work_type_id == tests.work_type_id
+    after = {
+        row.student.full_name: row.score.total
+        for row in await gradebook.sheet(TEACHER, group.group_id)
+    }
+    assert after["Иванов"] == Decimal(12)
+
+
+async def test_an_item_stays_in_its_group_and_a_proportional_type(
+    gradebook: Gradebook,
+    session: AsyncSession,
+) -> None:
+    """An accumulating type and another group's type are refused."""
+    _, _, types = await _setup(gradebook)
+    item = await gradebook.create_item(
+        TEACHER,
+        types[WorkTypeKind.HOMEWORK].work_type_id,
+        title="ДЗ 1",
+        max_points=Decimal(10),
+    )
+    with pytest.raises(ItemMoveError):
+        await gradebook.ledger.move_item(
+            item.item_id,
+            types[WorkTypeKind.BOARD].work_type_id,
+        )
+    other = await gradebook.roster.create(
+        TEACHER,
+        title="К02-261",
+        subject="ДМ",
+        semester="осень 2026",
+    )
+    foreign = {row.kind: row for row in await gradebook.scheme(TEACHER, other.group_id)}
+    with pytest.raises(ItemMoveError):
+        await gradebook.ledger.move_item(
+            item.item_id,
+            foreign[WorkTypeKind.TEST].work_type_id,
+        )
+    stayed = await SqlAlchemyItems(session).get(item.item_id)
+    assert stayed is not None
+    assert stayed.work_type_id == types[WorkTypeKind.HOMEWORK].work_type_id
 
 
 async def test_priority_weights_cover_the_candidates(gradebook: Gradebook) -> None:

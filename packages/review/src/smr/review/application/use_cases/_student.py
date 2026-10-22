@@ -182,9 +182,15 @@ class FileAppeal:
             )
             await self._verdicts.set_status(verdict.verdict_id, VerdictStatus.APPEALED)
             await self._appeals.add(filed)
+            payload: dict[str, object] = {
+                "title": work.title,
+                "work_no": verdict.verdict_id.hex[:8],
+            }
+            if origin.name == "homework":
+                payload["label"] = "домашнее задание"
             _ = await self._notifications.notify_admins(
                 NotificationKind.APPEAL_FILED,
-                {"title": work.title, "work_no": verdict.verdict_id.hex[:8]},
+                payload,
                 f"appeal:{filed.appeal_id}",
             )
             await self._audit.record(

@@ -2,23 +2,26 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Sequence
 from typing import final
 
 from aiogram import Bot
 from dishka import AsyncContainer, Provider, Scope, make_async_container, provide
 
+from smr.bdz.application.services import BdzReviewSource
 from smr.bdz.di import BdzProvider
 from smr.core.backup import Backup
 from smr.core.clock import Clock
 from smr.core.config import DatabaseSettings, StorageSettings, TelegramSettings
 from smr.core.di import CONTAINER_VALIDATION, CoreProvider
 from smr.gradebook.di import GradebookProvider
+from smr.homework.application.services import HomeworkReviewSource
 from smr.homework.di import HomeworkProvider
 from smr.materials.di import MaterialsProvider
 from smr.notifications.application.ports import Sender
 from smr.notifications.application.use_cases import DeliverPending
 from smr.notifications.di import NotificationsProvider
+from smr.review.application.ports import ReviewSource
 from smr.review.di import ReviewProvider
 from smr.roster.di import RosterProvider
 
@@ -80,6 +83,32 @@ class WorkerProvider(Provider):
         return Backup(str(database.url), storage.data_dir, storage.backup_dir, clock)
 
 
+@final
+class ReviewSourcesProvider(Provider):
+    """БДЗ and ordinary homework, for the review."""
+
+    scope = Scope.REQUEST
+
+    @provide
+    def review_sources(
+        self,
+        bdz: BdzReviewSource,
+        homework: HomeworkReviewSource,
+    ) -> Sequence[ReviewSource]:
+        """Give the review both sources.
+
+        Args:
+            bdz: BdzReviewSource - БДЗ.
+            homework: HomeworkReviewSource - Ordinary homework. The agent skips
+                it unless the teacher names the source.
+
+        Returns:
+            Sequence[ReviewSource] - БДЗ, then homework.
+
+        """
+        return (bdz, homework)
+
+
 def make_container() -> AsyncContainer:
     """Build the worker's container.
 
@@ -96,6 +125,7 @@ def make_container() -> AsyncContainer:
         MaterialsProvider(),
         ReviewProvider(),
         BdzProvider(),
+        ReviewSourcesProvider(),
         WorkerProvider(),
         validation_settings=CONTAINER_VALIDATION,
     )

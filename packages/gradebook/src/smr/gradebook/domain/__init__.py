@@ -7,6 +7,7 @@ from ._enums import ScoringMode, WorkTypeKind
 from ._errors import (
     EntryNotFoundError,
     GradebookError,
+    ItemMoveError,
     ItemNotFoundError,
     PointsOutOfRangeError,
     WorkTypeInUseError,
@@ -21,6 +22,7 @@ __all__ = (
     "GradeEntry",
     "GradeItem",
     "GradebookError",
+    "ItemMoveError",
     "ItemNotFoundError",
     "PointsOutOfRangeError",
     "SchemeLine",

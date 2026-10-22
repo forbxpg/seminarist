@@ -124,6 +124,20 @@ class SqlAlchemyEntries:
         )
         return [_domain(row) for row in rows]
 
+    async def retarget(self, item_id: uuid.UUID, work_type_id: uuid.UUID) -> None:
+        """Point an item's entries at another work type, leaving the points.
+
+        Args:
+            item_id: uuid.UUID - The item.
+            work_type_id: uuid.UUID - The work type.
+
+        """
+        _ = await self._session.execute(
+            update(_Row)
+            .where(_Row.item_id == item_id)
+            .values(work_type_id=work_type_id),
+        )
+
     async def update(self, entry: GradeEntry) -> None:
         """Store a changed entry.
 

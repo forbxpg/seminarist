@@ -286,20 +286,21 @@ class FinalizeByTeacher:
             if appeal is not None and appeal.status is AppealStatus.OPEN:
                 await self._appeals.resolve(appeal.appeal_id, final.verdict_id, now)
             await source.apply_grade(old.work_id, total, teacher=actor, agent=None)
+            notice: dict[str, object] = {
+                "title": work.title,
+                "total": _money(total),
+                "max": _money(sheet.max_points),
+                # A manual verdict was never shown to the student: no "было".
+                "before": (
+                    _money(old.total) if old.status is VerdictStatus.APPEALED else None
+                ),
+            }
+            if source.name == "homework":
+                notice["label"] = "домашнее задание"
             _ = await self._notifications.notify_student(
                 old.student_ref,
                 NotificationKind.REVIEW_FINAL,
-                {
-                    "title": work.title,
-                    "total": _money(total),
-                    "max": _money(sheet.max_points),
-                    # A manual verdict was never shown to the student: no "было".
-                    "before": (
-                        _money(old.total)
-                        if old.status is VerdictStatus.APPEALED
-                        else None
-                    ),
-                },
+                notice,
                 f"review:{final.verdict_id}",
             )
             await self._audit.record(

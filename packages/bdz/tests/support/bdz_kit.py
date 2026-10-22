@@ -14,6 +14,7 @@ from smr.bdz.application.use_cases import (
     DeleteBdz,
     DeleteStudentBdzFiles,
     ExportBdz,
+    MoveBdz,
     SendBdz,
 )
 from smr.bdz.infrastructure.repositories import (
@@ -94,6 +95,14 @@ class BdzBox:
             limits,
         )
         self.statement: BdzStatement = BdzStatement(assignments, roster.api)
+        self.move: MoveBdz = MoveBdz(
+            assignments,
+            roster.api,
+            gradebook.ledger,
+            audit,
+            uow,
+            guard,
+        )
         self.delete: DeleteBdz = DeleteBdz(
             assignments,
             submissions,

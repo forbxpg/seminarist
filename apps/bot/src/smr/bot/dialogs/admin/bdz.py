@@ -25,6 +25,7 @@ from smr.bdz.application.use_cases import (
     DeleteBdz,
     ExportBdz,
     ListBdz,
+    MoveBdz,
     UpdateBdzDeadline,
     Upload,
 )
@@ -35,7 +36,7 @@ from smr.bot.states import BdzSG
 from smr.bot.texts import moment, points, safe
 from smr.core.clock import Clock
 from smr.gradebook.application.use_cases import ListWorkTypes
-from smr.gradebook.domain import ScoringMode
+from smr.gradebook.domain import ItemMoveError, ScoringMode
 from smr.review.domain import VerdictStatus
 
 _MIDDLEWARE = Any
@@ -97,6 +98,42 @@ async def _card_getter(
         f"итог {row.final}, опоздали {row.late}"
     )
     return {"text": text}
+
+
+@inject
+async def _move_getter(
+    dialog_manager: DialogManager,
+    listing: FromDishka[ListBdz],
+    types: FromDishka[ListWorkTypes],
+    **_: _MIDDLEWARE,
+) -> dict[str, object]:
+    bdz_id = _bdz(dialog_manager)
+    rows = await listing(actor(dialog_manager), _group(dialog_manager))
+    current = next(item.bdz.work_type_id for item in rows if item.bdz.bdz_id == bdz_id)
+    found = await types(actor(dialog_manager), _group(dialog_manager))
+    choices = [
+        (item.title, str(item.work_type_id))
+        for item in found
+        if item.mode is ScoringMode.PROPORTIONAL and item.work_type_id != current
+    ]
+    return {"empty": not choices, "types": choices}
+
+
+@inject
+async def _moved(
+    callback: CallbackQuery,
+    _widget: object,
+    manager: DialogManager,
+    item_id: str,
+    move: FromDishka[MoveBdz],
+) -> None:
+    try:
+        _ = await move(actor(manager), _bdz(manager), uuid.UUID(item_id))
+    except ItemMoveError:
+        _ = await callback.answer("Этот вид работы не подходит.", show_alert=True)
+        return
+    _ = await callback.answer("БДЗ перенесено.")
+    await manager.switch_to(BdzSG.card)
 
 
 @inject
@@ -355,12 +392,32 @@ bdz_dialog = Dialog(
     Window(
         Format("{text}"),
         SwitchTo(Const("📅 Срок"), id="deadline", state=BdzSG.deadline),
+        SwitchTo(Const("↔️ Перенести"), id="move", state=BdzSG.move),
         SwitchTo(Const("👥 Кто сдал"), id="roster", state=BdzSG.roster),
         Button(Const("📦 Скачать архив"), id="export", on_click=_export),
         SwitchTo(Const("🗑 Удалить"), id="delete", state=BdzSG.delete),
         SwitchTo(Const("« Список"), id="back", state=BdzSG.list),
         getter=_card_getter,
         state=BdzSG.card,
+    ),
+    Window(
+        Const("Куда перенести БДЗ? Оценки переедут вместе с ним."),
+        Const("Других пропорциональных видов работы нет.", when="empty"),
+        ScrollingGroup(
+            Select(
+                Format("{item[0]}"),
+                id="target",
+                item_id_getter=itemgetter(1),
+                items="types",
+                on_click=_moved,  # pyright: ignore[reportArgumentType]
+            ),
+            id="targets",
+            width=1,
+            height=6,
+        ),
+        SwitchTo(Const("« Карточка"), id="back", state=BdzSG.card),
+        getter=_move_getter,
+        state=BdzSG.move,
     ),
     Window(
         Const("Название БДЗ:"),

@@ -98,6 +98,17 @@ class SqlAlchemyAssignments:
         if row is not None:
             row.deadline = bdz.deadline
 
+    async def save_work_type(self, bdz: Bdz) -> None:
+        """Store a new work type.
+
+        Args:
+            bdz: Bdz - The assignment with the new work type.
+
+        """
+        row = await self._session.get(AssignmentModel, bdz.bdz_id)
+        if row is not None:
+            row.work_type_id = bdz.work_type_id
+
     async def delete(self, bdz_id: uuid.UUID) -> Bdz | None:
         """Delete a БДЗ. Submissions cascade.
 
