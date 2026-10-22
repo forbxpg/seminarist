@@ -51,9 +51,15 @@ async def _student(roster: Roster) -> uuid.UUID:
     return student.student_id
 
 
-def _verdict(work: WorkRef, points: str, **flags: bool) -> VerdictInput:
+def _verdict(
+    work: WorkRef,
+    points: str,
+    *,
+    source: str = "bdz",
+    **flags: bool,
+) -> VerdictInput:
     return VerdictInput(
-        work_ref=f"bdz:{work.work_id}",
+        work_ref=f"{source}:{work.work_id}",
         sha256=work.sha256,
         grader="m",
         summary="",
@@ -242,6 +248,32 @@ async def _current(review: Review, work: WorkRef) -> uuid.UUID:
     view = await review.mine(STUDENT, "bdz", work.work_id)
     assert view is not None
     return view.verdict.verdict_id
+
+
+async def test_homework_appeal_names_the_source(
+    review: Review,
+    roster: Roster,
+    notifications: Notifications,
+) -> None:
+    """An appeal and the teacher's grade say this was ordinary homework."""
+    review.source.name = "homework"
+    work = review.source.add(await _student(roster), STUDENT)
+    _ = await review.submit(_verdict(work, "2", source="homework"))
+    _ = await review.appeal(
+        STUDENT,
+        "homework",
+        work.work_id,
+        "Не согласен с баллом за задачу.",
+    )
+    queued = await notifications.queued()
+    filed = next(item for item in queued if item.kind == "appeal_filed")
+    assert filed.payload["label"] == "домашнее задание"
+    view = await review.mine(STUDENT, "homework", work.work_id)
+    assert view is not None
+    _ = await review.finalize(TEACHER, view.verdict.verdict_id, {1: Decimal(1)}, {}, "")
+    queued = await notifications.queued()
+    assert queued[-1].kind == "review_final"
+    assert queued[-1].payload["label"] == "домашнее задание"
 
 
 async def test_appeal_rules(review: Review, roster: Roster) -> None:

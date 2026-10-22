@@ -92,6 +92,28 @@ def test_review_final_with_before() -> None:
     )
 
 
+def test_homework_final_and_appeal_use_the_label() -> None:
+    """A teacher's grade and an appeal name ordinary homework, not a БДЗ."""
+    final = render(
+        NotificationKind.REVIEW_FINAL,
+        {
+            "title": "ДЗ 3",
+            "total": "2",
+            "max": "3",
+            "before": "1",
+            "label": "домашнее задание",
+        },
+    )
+    appeal = render(
+        NotificationKind.APPEAL_FILED,
+        {"title": "ДЗ 3", "work_no": "abcd1234", "label": "домашнее задание"},
+    )
+    assert "проверил домашнее задание <b>ДЗ 3</b>" in final
+    assert "БДЗ" not in final
+    assert "Апелляция по домашнему заданию <b>ДЗ 3</b>" in appeal
+    assert "БДЗ" not in appeal
+
+
 def test_final_without_before_has_no_was() -> None:
     """A first teacher grade has no previous total."""
     text = render(

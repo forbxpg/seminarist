@@ -118,15 +118,19 @@ def _review_manual(p: Mapping[str, object]) -> str:
 def _review_final(p: Mapping[str, object]) -> str:
     before = p.get("before")
     was = f" (было {_text(p, 'before')})" if before else ""
+    label = _text(p, "label") or "БДЗ"
     return (
-        f"✅ Преподаватель проверил БДЗ <b>{_text(p, 'title')}</b>: "
+        f"✅ Преподаватель проверил {label} <b>{_text(p, 'title')}</b>: "
         f"{_text(p, 'total')} из {_text(p, 'max')}{was}. Это окончательная оценка."
     )
 
 
 def _appeal_filed(p: Mapping[str, object]) -> str:
+    label = _text(p, "label") or "БДЗ"
+    if label == "домашнее задание":
+        label = "домашнему заданию"
     return (
-        f"⚖️ Апелляция по БДЗ <b>{_text(p, 'title')}</b> "
+        f"⚖️ Апелляция по {label} <b>{_text(p, 'title')}</b> "
         f"(работа №{_text(p, 'work_no')}). Откройте «Ручная проверка» в /admin."
     )
 

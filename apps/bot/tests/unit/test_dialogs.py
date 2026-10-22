@@ -32,6 +32,9 @@ from smr.bot.handlers.start import router as start_router
 from smr.bot.states import AdminSG, ReviewSG, StudentSG
 from smr.core.access import AdminGuard
 from smr.core.files import FileStore
+from smr.homework.application.use_cases import MyWork, StudentWork
+from smr.homework.domain import Assignment, Submission
+from smr.homework.domain import SubmissionStatus as HomeworkStatus
 from smr.review.application.ports import TaskSheet
 from smr.review.application.use_cases import (
     FileAppeal,
@@ -96,6 +99,7 @@ class _World:
     claimed: list[uuid.UUID] = field(default_factory=list)
     uploads: list[bytes] = field(default_factory=list)
     appeals: list[str] = field(default_factory=list)
+    appeal_source: str | None = None
     scores: dict[int, Decimal] = field(default_factory=dict)
     comment: str | None = None
     graded: bool = False
@@ -256,6 +260,7 @@ class _Appeal(_Bound):
         _work_id: uuid.UUID,
         text: str,
     ) -> Appeal:
+        self._world.appeal_source = _source
         self._world.appeals.append(text)
         return Appeal(
             appeal_id=uuid.UUID("00000000-0000-4000-8000-000000000010"),
@@ -266,6 +271,13 @@ class _Appeal(_Bound):
             resolved_at=None,
             resolution_verdict_id=None,
         )
+
+
+class _MyWork(_Bound):
+    async def __call__(
+        self, _tg_user_id: int, _assignment_id: uuid.UUID
+    ) -> StudentWork:
+        return _homework_work(self._world)
 
 
 class _Queue(_Bound):
@@ -346,6 +358,10 @@ class _Fakes(Provider):
     @provide(scope=Scope.APP)
     def appeal(self) -> FileAppeal:
         return _as(_Appeal(self._world), FileAppeal)
+
+    @provide(scope=Scope.APP)
+    def my_work(self) -> MyWork:
+        return _as(_MyWork(self._world), MyWork)
 
     @provide(scope=Scope.APP)
     def queue(self) -> TeacherQueue:
@@ -626,6 +642,37 @@ def _sheet() -> TaskSheet:
     )
 
 
+def _homework_work(world: _World) -> StudentWork:
+    assignment_id = uuid.UUID("00000000-0000-4000-8000-000000000020")
+    return StudentWork(
+        assignment=Assignment(
+            assignment_id=assignment_id,
+            group_id=world.group.group_id,
+            work_type_id=uuid.UUID("00000000-0000-4000-8000-000000000022"),
+            item_id=None,
+            title="ДЗ 3",
+            body="Задания 1–6",
+            statement=None,
+            deadline=_NOW,
+            max_points=Decimal(3),
+        ),
+        live=Submission(
+            submission_id=uuid.UUID("00000000-0000-4000-8000-000000000021"),
+            assignment_id=assignment_id,
+            student_id=world.student.student_id,
+            version=1,
+            status=HomeworkStatus.GRADED,
+            sent_at=_NOW,
+            is_late=False,
+            entry_id=None,
+        ),
+        live_files=1,
+        draft_files=0,
+        points=Decimal(2),
+        comment=None,
+    )
+
+
 def _ids(world: _World) -> dict[str, str]:
     return {
         "group_id": str(world.group.group_id),
@@ -748,6 +795,30 @@ async def test_a_student_reads_the_breakdown_and_files_an_appeal(
         await stage.student.send("Не согласен с баллом за первую задачу.")
         await _click(stage.student, stage.manager, r"Отправить")
         assert world.appeals == ["Не согласен с баллом за первую задачу."]
+        assert any("Апелляция отправлена" in text for text in stage.bot.texts)
+        _ok(stage.bot)
+    finally:
+        await stage.close()
+
+
+async def test_a_student_appeals_ordinary_homework(tmp_path: Path) -> None:
+    """The homework card sends the breakdown and files one appeal for that source."""
+    world = _world("bound", "Иванов Иван", BindingStatus.BOUND, CONSENT_VERSION)
+    stage = await _stage(tmp_path, world)
+    try:
+        await stage.open(
+            stage.student,
+            StudentSG.assignment,
+            {"assignment_id": "00000000-0000-4000-8000-000000000020"},
+        )
+        await _click(stage.student, stage.manager, r"🧾 Разбор")
+        assert any("5 из 10" in text for text in stage.bot.texts)
+        assert "Апелляцию можно подать" in _windows(stage.manager)
+        await _click(stage.student, stage.manager, r"⚖️ Апелляция")
+        await stage.student.send("Не согласен с баллом за задачу.")
+        await _click(stage.student, stage.manager, r"Отправить")
+        assert world.appeal_source == "homework"
+        assert world.appeals == ["Не согласен с баллом за задачу."]
         assert any("Апелляция отправлена" in text for text in stage.bot.texts)
         _ok(stage.bot)
     finally:

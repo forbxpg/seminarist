@@ -10,7 +10,7 @@ from typing import Any
 from aiogram.enums import ContentType
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from aiogram_dialog import Dialog, DialogManager, ShowMode, Window
-from aiogram_dialog.widgets.input import MessageInput
+from aiogram_dialog.widgets.input import ManagedTextInput, MessageInput, TextInput
 from aiogram_dialog.widgets.kbd import Button, Row, ScrollingGroup, Select, SwitchTo
 from aiogram_dialog.widgets.text import Const, Format
 from dishka.integrations.aiogram_dialog import FromDishka, inject
@@ -21,6 +21,7 @@ from smr.bot.dialogs.student.bdz import student_bdz_windows
 from smr.bot.files import receive, send_file
 from smr.bot.states import StudentSG
 from smr.bot.texts import moment, points, safe
+from smr.bot.verdicts import verdict_messages
 from smr.core.files import FileTooLargeError, UnsupportedFileError
 from smr.gradebook.application.use_cases import StudentReport
 from smr.homework.application.use_cases import (
@@ -41,6 +42,8 @@ from smr.homework.domain import (
 )
 from smr.materials.application.use_cases import MaterialFiles, PublishedMaterials
 from smr.notifications.application.use_cases import RemindersEnabled, SetReminders
+from smr.review.application.use_cases import FileAppeal, MyVerdict
+from smr.review.domain import VerdictStatus
 from smr.roster.application.use_cases import ForgetAccount, Memberships
 from smr.roster.domain import BindingStatus
 
@@ -49,6 +52,10 @@ _MIDDLEWARE = Any
 
 def _group(manager: DialogManager) -> uuid.UUID:
     return remembered_id(manager, "group_id")
+
+
+def _assignment(manager: DialogManager) -> uuid.UUID:
+    return remembered_id(manager, "assignment_id")
 
 
 @inject
@@ -135,13 +142,17 @@ async def _assignment_picked(
 async def _assignment_getter(
     dialog_manager: DialogManager,
     work: FromDishka[MyWork],
+    mine: FromDishka[MyVerdict],
     **_: _MIDDLEWARE,
 ) -> dict[str, object]:
-    state = await work(
-        actor(dialog_manager),
-        remembered_id(dialog_manager, "assignment_id"),
-    )
+    state = await work(actor(dialog_manager), _assignment(dialog_manager))
+    view = None
+    if state.live is not None:
+        view = await mine(actor(dialog_manager), "homework", state.live.submission_id)
     assignment = state.assignment
+    status = _status(state)
+    if view is not None and view.verdict.status is VerdictStatus.APPEALED:
+        status = "апелляция рассматривается"
     lines = [
         f"<b>{safe(assignment.title)}</b>",
         (
@@ -151,7 +162,7 @@ async def _assignment_getter(
     ]
     if assignment.body:
         lines.append(f"\n{safe(assignment.body)}")
-    lines.append(f"\nСтатус: {_status(state)}")
+    lines.append(f"\nСтатус: {status}")
     if state.live is not None and state.live.sent_at is not None:
         lines.append(f"Сдано: {moment(state.live.sent_at)}, файлов: {state.live_files}")
     if state.comment:
@@ -164,6 +175,8 @@ async def _assignment_getter(
         "can_add": not graded,
         "can_submit": state.draft_files > 0,
         "has_statement": assignment.statement is not None,
+        "has_verdict": view is not None
+        and view.verdict.status in {VerdictStatus.PUBLISHED, VerdictStatus.FINAL},
     }
 
 
@@ -274,6 +287,68 @@ async def _upload_getter(
         remembered_id(dialog_manager, "assignment_id"),
     )
     return {"count": state.draft_files, "can_submit": state.draft_files > 0}
+
+
+@inject
+async def _verdict(
+    callback: CallbackQuery,
+    _button: Button,
+    manager: DialogManager,
+    work: FromDishka[MyWork],
+    mine: FromDishka[MyVerdict],
+) -> None:
+    state = await work(actor(manager), _assignment(manager))
+    if state.live is None:
+        return
+    view = await mine(actor(manager), "homework", state.live.submission_id)
+    if view is None or callback.message is None:
+        return
+    messages = verdict_messages(view, title=state.assignment.title)
+    _ = await callback.message.answer(messages[0])
+    for text in messages[1:]:
+        _ = await callback.message.answer(text)
+    manager.show_mode = ShowMode.SEND
+    if view.can_appeal and view.appeal_until is not None:
+        manager.dialog_data["appeal_until"] = moment(view.appeal_until)
+        await manager.switch_to(StudentSG.homework_verdict)
+
+
+async def _verdict_getter(
+    dialog_manager: DialogManager,
+    **_: _MIDDLEWARE,
+) -> dict[str, object]:
+    return {"until": dialog_manager.dialog_data.get("appeal_until", "")}
+
+
+async def _appeal_text(
+    _message: Message,
+    _widget: ManagedTextInput[str],
+    manager: DialogManager,
+    text: str,
+) -> None:
+    manager.dialog_data["appeal"] = " ".join(text.split())
+    await manager.switch_to(StudentSG.homework_appeal_confirm)
+
+
+@inject
+async def _confirm_appeal(
+    callback: CallbackQuery,
+    _button: Button,
+    manager: DialogManager,
+    work: FromDishka[MyWork],
+    appeal: FromDishka[FileAppeal],
+) -> None:
+    state = await work(actor(manager), _assignment(manager))
+    if state.live is None:
+        return
+    _ = await appeal(
+        actor(manager),
+        "homework",
+        state.live.submission_id,
+        str(manager.dialog_data["appeal"]),
+    )
+    _ = await callback.answer("Апелляция отправлена преподавателю.", show_alert=True)
+    await manager.switch_to(StudentSG.assignment)
 
 
 @inject
@@ -500,6 +575,12 @@ student_dialog = Dialog(
                 when="can_submit",
             ),
         ),
+        Button(
+            Const("🧾 Разбор"),
+            id="verdict",
+            on_click=_verdict,
+            when="has_verdict",
+        ),
         SwitchTo(Const("« Задания"), id="back", state=StudentSG.homework),
         getter=_assignment_getter,
         state=StudentSG.assignment,
@@ -517,6 +598,34 @@ student_dialog = Dialog(
         SwitchTo(Const("« Назад"), id="back", state=StudentSG.assignment),
         getter=_upload_getter,
         state=StudentSG.upload,
+    ),
+    Window(
+        Format("Разбор отправлен выше. Апелляцию можно подать до {until}."),
+        SwitchTo(
+            Const("⚖️ Апелляция"),
+            id="appeal",
+            state=StudentSG.homework_appeal,
+        ),
+        SwitchTo(Const("« Задание"), id="back", state=StudentSG.assignment),
+        getter=_verdict_getter,
+        state=StudentSG.homework_verdict,
+    ),
+    Window(
+        Format(
+            "Апелляцию проверит преподаватель. Оценка может как вырасти, "
+            "так и снизиться. Подать можно один раз, до {until}.\n"
+            "Напишите, с чем не согласны.",
+        ),
+        TextInput(id="appeal", on_success=_appeal_text),
+        SwitchTo(Const("Отмена"), id="cancel", state=StudentSG.assignment),
+        getter=_verdict_getter,
+        state=StudentSG.homework_appeal,
+    ),
+    Window(
+        Const("Отправить апелляцию?"),
+        Button(Const("Отправить"), id="yes", on_click=_confirm_appeal),
+        SwitchTo(Const("Отмена"), id="no", state=StudentSG.assignment),
+        state=StudentSG.homework_appeal_confirm,
     ),
     Window(
         Const("Семинары — нажмите, чтобы получить файлы:"),
