@@ -8,7 +8,6 @@ from decimal import Decimal
 from typing import final
 
 from smr.core.access import AdminGuard
-from smr.core.clock import MOSCOW
 from smr.core.database import UnitOfWork
 from smr.gradebook.application.contracts import GradebookApi
 from smr.gradebook.domain import WorkTypeKind
@@ -18,6 +17,7 @@ from smr.sessions.application.ports import AttendanceRepository, SessionReposito
 from smr.sessions.domain import AttendanceStatus, Session, StudentNotInGroupError
 
 from ._common import existing, open_group
+from ._labels import attendance_title, moscow_day, sync_attendance_titles
 
 _ONE = Decimal(1)
 _ZERO = Decimal(0)
@@ -111,6 +111,12 @@ class MarkAttendance:
                 raise StudentNotInGroupError
             await self._attendance.save(session_id, statuses)
             item_id = await self._attendance_item(session)
+            await sync_attendance_titles(
+                self._sessions,
+                self._gradebook,
+                session.group_id,
+                moscow_day(session.starts_at),
+            )
             if item_id is not None:
                 for student_id, status in statuses.items():
                     _ = await self._gradebook.set_entry(
@@ -141,9 +147,14 @@ class MarkAttendance:
         )
         if work_type is None:
             return None
+        same_day = [
+            other
+            for other in await self._sessions.of_group(session.group_id)
+            if moscow_day(other.starts_at) == moscow_day(session.starts_at)
+        ]
         item = await self._gradebook.create_item(
             work_type.work_type_id,
-            f"Занятие {session.starts_at.astimezone(MOSCOW):%d.%m}",
+            attendance_title(session.starts_at, with_time=len(same_day) > 1),
             _ONE,
             session.starts_at,
         )
